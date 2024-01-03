@@ -43,7 +43,7 @@ return function(opts)
         lines = src_lines,
         item = src_item,
         range = Range.from_line(dst_headline.position.end_line),
-        headline = dst_headline.position.end_line,
+        headline = dst_headline.title,
       }
       local refiled = Capture:_refile_to(refile_opts)
       if not refiled then
