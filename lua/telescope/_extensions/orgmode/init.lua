@@ -2,9 +2,9 @@
 -- public orgmode api
 -- TODO: add highlight groups
 
-return require("telescope").register_extension {
-    exports = {
-        search_headings = require("telescope._extensions.orgmode.search_headings"),
-        refile_heading = require("telescope._extensions.orgmode.refile_heading")
-    },
-}
+return require('telescope').register_extension({
+  exports = {
+    search_headings = require('telescope._extensions.orgmode.search_headings'),
+    refile_heading = require('telescope._extensions.orgmode.refile_heading'),
+  },
+})
