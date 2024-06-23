@@ -3,6 +3,7 @@
 -- TODO: add highlight groups
 
 return require('telescope').register_extension({
+  setup = require('telescope-orgmode').setup,
   exports = {
     search_headings = require('telescope-orgmode').search_headings,
     refile_heading = require('telescope-orgmode').refile_heading,

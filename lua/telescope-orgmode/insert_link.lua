@@ -9,6 +9,7 @@ local action_state = require('telescope.actions.state')
 local OrgApi = require('orgmode.api')
 
 local utils = require('telescope-orgmode.utils')
+local config = require('telescope-orgmode.config')
 
 ---@class MatchEntry
 ---@field value OrgEntry
@@ -34,13 +35,12 @@ local function insert(prompt_bufnr)
     destination = 'file:' .. entry.value.file.filename .. '::*' .. entry.value.headline.title
   end
 
-  --print(vim.inspect(destination))
   OrgApi.insert_link(destination)
   return true
 end
 
 return function(opts)
-  opts = opts or {}
+  opts = vim.tbl_extend('force', config.opts, opts or {})
 
   pickers
     .new(opts, {
@@ -51,9 +51,14 @@ return function(opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      attach_mappings = function(prompt_bufnr, map)
+      attach_mappings = function(_, map)
+        map('i', '<C-Space>', utils.gen_depth_toggle(opts), { desc = 'Toggle headline/file jump' })
+        for mode, mappings in pairs(opts.mappings or {}) do
+          for key, action in pairs(mappings) do
+            map(mode, key, action)
+          end
+        end
         action_set.select:replace(insert)
-        map('i', '<c-space>', utils.gen_depth_toggle(opts, prompt_bufnr))
         return true
       end,
     })

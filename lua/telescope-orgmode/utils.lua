@@ -98,21 +98,24 @@ utils.make_entry = function(opts)
   end
 end
 
-utils.gen_depth_toggle = function(opts, prompt_bufnr)
-  local status = state.get_status(prompt_bufnr)
-  status._ot_current_depth = opts.max_depth
-  status._ot_next_depth = nil
-  if status._ot_current_depth ~= 0 then
-    status._ot_next_depth = 0
-  end
-
-  return function()
+utils.gen_depth_toggle = function(opts)
+  return function(prompt_bufnr)
     local current_picker = action_state.get_current_picker(prompt_bufnr)
+    local status = state.get_status(prompt_bufnr)
 
-    local aux = status._ot_current_depth
-    status._ot_current_depth = status._ot_next_depth
-    status._ot_next_depth = aux
+    if status._ot_current_depth == nil and status._ot_next_depth == nil then
+      -- uninitialized state - initialize with "show files only"
+      -- Because when this function is called the first time, it is triggered
+      -- by the users and we search over headings by default, we set the state
+      -- for the first toggle already here.
+      status._ot_current_depth = 0
+      status._ot_next_depth = opts.max_depth
+    else
+      -- initalized state - swap to next state
+      status._ot_current_depth, status._ot_next_depth = status._ot_next_depth, status._ot_current_depth
+    end
 
+    -- opts is used as a channel to communicate the depth state to the get_entries function
     opts.max_depth = status._ot_current_depth
     local new_finder = finders.new_table({
       results = utils.get_entries(opts),

@@ -6,6 +6,7 @@ local actions = require('telescope.actions')
 local action_state = require('telescope.actions.state')
 
 local utils = require('telescope-orgmode.utils')
+local config = require('telescope-orgmode.config')
 
 local OrgApi = require('orgmode.api')
 
@@ -32,7 +33,7 @@ end
 M.closest_headline = nil
 
 return function(opts)
-  opts = opts or {}
+  opts = vim.tbl_extend('force', config.opts, opts or {})
 
   M.closest_headline = OrgApi.current():get_closest_headline()
 
@@ -47,9 +48,14 @@ return function(opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      attach_mappings = function(prompt_bufnr, map)
+      attach_mappings = function(_, map)
+        map('i', '<C-Space>', utils.gen_depth_toggle(opts), { desc = 'Toggle headline/orgfile' })
+        for mode, mappings in pairs(opts.mappings or {}) do
+          for key, action in pairs(mappings) do
+            map(mode, key, action)
+          end
+        end
         action_set.select:replace(M.refile)
-        map('i', '<c-space>', utils.gen_depth_toggle(opts, prompt_bufnr))
         return true
       end,
     })

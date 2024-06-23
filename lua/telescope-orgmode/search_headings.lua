@@ -3,9 +3,10 @@ local finders = require('telescope.finders')
 local conf = require('telescope.config').values
 
 local utils = require('telescope-orgmode.utils')
+local config = require('telescope-orgmode.config')
 
 return function(opts)
-  opts = opts or {}
+  opts = vim.tbl_extend('force', config.opts, opts or {})
 
   pickers
     .new(opts, {
@@ -16,6 +17,15 @@ return function(opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
+      attach_mappings = function(_, map)
+        map('i', '<C-Space>', utils.gen_depth_toggle(opts), { desc = 'Toggle headline/orgfile jump' })
+        for mode, mappings in pairs(opts.mappings or {}) do
+          for key, action in pairs(mappings) do
+            map(mode, key, action)
+          end
+        end
+        return true
+      end,
     })
     :find()
 end
