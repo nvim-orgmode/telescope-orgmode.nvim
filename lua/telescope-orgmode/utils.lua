@@ -62,7 +62,8 @@ end
 utils.get_entries = function(opts)
   ---@type { file: OrgApiFile, filename: string, last_used: number }[]
   local file_results = vim.tbl_map(function(file)
-    return { file = file, filename = file.filename }
+    local file_stat = vim.loop.fs_stat(file.filename) or 0
+    return { file = file, filename = file.filename, last_used = file_stat.mtime.sec }
   end, orgmode.load())
 
   if not opts.archived then
@@ -70,6 +71,11 @@ utils.get_entries = function(opts)
       return not entry.file.is_archive_file
     end, file_results)
   end
+
+  -- sorting does not work with the fuzzy sorters
+  table.sort(file_results, function(a, b)
+    return a.last_used > b.last_used
+  end)
 
   if opts.state and opts.state.current and opts.state.current.max_depth == 0 then
     return index_orgfiles(file_results, opts)
@@ -94,7 +100,6 @@ utils.make_entry = function(opts)
     items = {
       { width = vim.F.if_nil(opts.location_width, 20) },
       { remaining = true },
-      --{ width = vim.F.if_nil(opts.tag_width, 20) },
     },
   })
 
