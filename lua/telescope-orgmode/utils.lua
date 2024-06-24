@@ -13,26 +13,11 @@ local utils = {}
 ---@field file OrgApiFile
 ---@field filename string
 ---@field headline? OrgApiHeadline
+---@field title? string
 
----Fetches entrys from OrgApi and extracts the relevant information
----@param opts any
+---@param file_results { file: OrgApiFile, filename: string }[]
 ---@return OrgEntry[]
-utils.get_entries = function(opts)
-  ---@type { file: OrgApiFile, filename: string }[]
-  local file_results = vim.tbl_map(function(file)
-    return { file = file, filename = file.filename }
-  end, orgmode.load())
-
-  if not opts.archived then
-    file_results = vim.tbl_filter(function(entry)
-      return not entry.file.is_archive_file
-    end, file_results)
-  end
-
-  if opts.max_depth == 0 then
-    return file_results
-  end
-
+local function index_headlines(file_results, opts)
   local results = {}
   for _, file_entry in ipairs(file_results) do
     for _, headline in ipairs(file_entry.file.headlines) do
@@ -43,6 +28,7 @@ utils.get_entries = function(opts)
           file = file_entry.file,
           filename = file_entry.filename,
           headline = headline,
+          title = nil,
         }
         table.insert(results, entry)
       end
@@ -52,11 +38,58 @@ utils.get_entries = function(opts)
   return results
 end
 
+---@param file_results { file: OrgApiFile, filename: string }[]
+---@return OrgEntry[]
+local function index_orgfiles(file_results, opts)
+  local results = {}
+  for _, file_entry in ipairs(file_results) do
+    local entry = {
+      file = file_entry.file,
+      filename = file_entry.filename,
+      -- not beautiful to access a private property, but this is the only way to get the title
+      ---@diagnostic disable-next-line: invisible, undefined-field
+      title = file_entry.file._file:get_directive('TITLE') or nil,
+      headline = nil,
+    }
+    table.insert(results, entry)
+  end
+  return results
+end
+
+---Fetches entrys from OrgApi and extracts the relevant information
+---@param opts any
+---@return OrgEntry[]
+utils.get_entries = function(opts)
+  ---@type { file: OrgApiFile, filename: string, last_used: number }[]
+  local file_results = vim.tbl_map(function(file)
+    return { file = file, filename = file.filename }
+  end, orgmode.load())
+
+  if not opts.archived then
+    file_results = vim.tbl_filter(function(entry)
+      return not entry.file.is_archive_file
+    end, file_results)
+  end
+
+  if opts.state and opts.state.current and opts.state.current.max_depth == 0 then
+    return index_orgfiles(file_results, opts)
+  end
+
+  return index_headlines(file_results, opts)
+end
+
 ---Entry-Maker for Telescope
 ---@param opts any
 ---@return fun(entry: OrgEntry):MatchEntry
 utils.make_entry = function(opts)
-  local displayer = entry_display.create({
+  local orgfile_displayer = entry_display.create({
+    separator = ' ',
+    items = {
+      { remaining = true },
+    },
+  })
+
+  local headline_displayer = entry_display.create({
     separator = ' ',
     items = {
       { width = vim.F.if_nil(opts.location_width, 20) },
@@ -67,27 +100,32 @@ utils.make_entry = function(opts)
 
   ---@param entry MatchEntry
   local function make_display(entry)
-    return displayer({ entry.location, entry.tags .. ' ' .. entry.line })
+    if opts.state and opts.state.current and opts.state.current.max_depth == 0 then
+      return orgfile_displayer({ entry.line })
+    else
+      return headline_displayer({ entry.location, entry.tags .. ' ' .. entry.line })
+    end
   end
 
   return function(entry)
-    local headline = entry.headline
-
     local lnum = nil
     local location = vim.fn.fnamemodify(entry.filename, ':t')
-    local line = ''
+    local line = entry.title or location
     local tags = ''
+    local ordinal = line
 
+    local headline = entry.headline
     if headline then
       lnum = headline.position.start_line
       location = string.format('%s:%i', location, lnum)
       line = string.format('%s %s', string.rep('*', headline.level), headline.title)
+      ordinal = tags .. ' ' .. line .. ' ' .. location
       tags = table.concat(headline.all_tags, ':')
     end
 
     return {
       value = entry,
-      ordinal = location .. ' ' .. tags .. ' ' .. line,
+      ordinal = ordinal,
       filename = entry.filename,
       lnum = lnum,
       display = make_display,
@@ -103,20 +141,31 @@ utils.gen_depth_toggle = function(opts)
     local current_picker = action_state.get_current_picker(prompt_bufnr)
     local status = state.get_status(prompt_bufnr)
 
-    if status._ot_current_depth == nil and status._ot_next_depth == nil then
-      -- uninitialized state - initialize with "show files only"
+    -- FIXME: the state get's sometimes nil when the initalization has already been run
+    -- In this case, a toggle is "dropped" (keypress does not change the state).
+    -- Can we avoid that by initializing the state in the higher order function?
+    -- Idea: We can try to do it as before, but pass the prompt_bufnr with the opts.
+    if status._ot_state == nil then
+      -- uninitialized state - initialize with orgfiles
       -- Because when this function is called the first time, it is triggered
-      -- by the users and we search over headings by default, we set the state
+      -- by the users and we search over headlines by default, we set the state
       -- for the first toggle already here.
-      status._ot_current_depth = 0
-      status._ot_next_depth = opts.max_depth
+      -- _ot_ is used as our plugin-specific namespace in the action status
+      -- (ot - orgmode telescope)
+      status._ot_state = { current = opts.state.orgfiles, next = opts.state.headlines }
     else
       -- initalized state - swap to next state
-      status._ot_current_depth, status._ot_next_depth = status._ot_next_depth, status._ot_current_depth
+      status._ot_state.current, status._ot_state.next = status._ot_state.next, status._ot_state.current
     end
 
     -- opts is used as a channel to communicate the depth state to the get_entries function
-    opts.max_depth = status._ot_current_depth
+    opts.state.current = status._ot_state.current
+
+    -- the caller may not have defined a prompt title - then we don't adjust it
+    if opts.state.current.prompt_title then
+      current_picker.layout.prompt.border:change_title(status._ot_state.current.prompt_title)
+    end
+
     local new_finder = finders.new_table({
       results = utils.get_entries(opts),
       entry_maker = opts.entry_maker or utils.make_entry(opts),

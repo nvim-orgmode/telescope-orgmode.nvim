@@ -7,10 +7,22 @@ local config = require('telescope-orgmode.config')
 
 return function(opts)
   opts = vim.tbl_extend('force', config.opts, opts or {})
+  opts.state = {
+    current = nil,
+    next = nil,
+    headlines = {
+      max_depth = opts.max_depth,
+      prompt_title = 'Search headlines',
+    },
+    orgfiles = {
+      max_depth = 0,
+      prompt_title = 'Search org files',
+    },
+  }
 
   pickers
     .new(opts, {
-      prompt_title = 'Search Headings',
+      prompt_title = opts.state.headlines.prompt_title,
       finder = finders.new_table({
         results = utils.get_entries(opts),
         entry_maker = opts.entry_maker or utils.make_entry(opts),

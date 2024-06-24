@@ -34,6 +34,18 @@ M.closest_headline = nil
 
 return function(opts)
   opts = vim.tbl_extend('force', config.opts, opts or {})
+  opts.state = {
+    current = nil,
+    next = nil,
+    headlines = {
+      max_depth = opts.max_depth,
+      prompt_title = 'Refile to headline',
+    },
+    orgfiles = {
+      max_depth = 0,
+      prompt_title = 'Refile to org files',
+    },
+  }
 
   M.closest_headline = OrgApi.current():get_closest_headline()
 
@@ -41,7 +53,7 @@ return function(opts)
     .new(opts, {
       -- TODO: alter prompt title when depth is 0: Refile under file, Refile
       -- under Headline
-      prompt_title = 'Refile Destination',
+      prompt_title = opts.state.headlines.prompt_title,
       finder = finders.new_table({
         results = utils.get_entries(opts),
         entry_maker = opts.entry_maker or utils.make_entry(opts),
