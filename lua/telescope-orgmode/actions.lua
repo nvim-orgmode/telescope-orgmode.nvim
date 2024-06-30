@@ -65,7 +65,7 @@ function M.insert(_)
 
     -- Link to a specific heading if is set
     if entry.value.headline then
-      destination = 'file:' .. entry.value.file.filename .. '::*' .. entry.value.headline.title
+      destination = org.get_link_to_headline(entry.value.headline)
     end
 
     org.insert_link(destination)
@@ -83,11 +83,11 @@ function M._find_orgfiles(opts, prompt_bufnr)
   M._update_picker(orgfiles, opts.prompt_titles.orgfiles, prompt_bufnr)
 end
 
-function M._update_picker(results, title, prompt_bufnr)
+function M._update_picker(finder, title, prompt_bufnr)
   local current_picker = action_state.get_current_picker(prompt_bufnr)
 
   current_picker.layout.prompt.border:change_title(title)
-  current_picker:refresh(results)
+  current_picker:refresh(finder)
 end
 
 return M

@@ -28,6 +28,12 @@ function M.refile(opts)
   return OrgApi.refile(opts)
 end
 
+---@param headline OrgApiHeadline
+---@return string
+function M.get_link_to_headline(headline)
+  return OrgApi.get_link_to_headline(headline._section) ---@diagnostic disable-line: invisible
+end
+
 function M.insert_link(destination)
   return OrgApi.insert_link(destination)
 end

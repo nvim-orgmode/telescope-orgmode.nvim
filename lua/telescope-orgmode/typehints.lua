@@ -39,6 +39,10 @@
 ---@field start_col number
 ---@field end_line number
 ---@field end_col number
+---
+---@class OrgHeadline
+---@field headline TSNode
+---@field file OrgFile
 
 ---@class OrgApiHeadline
 ---@field title string headline title without todo keyword, tags and priority. Ex. `* TODO I am a headline  :SOMETAG:` returns `I am a headline`
@@ -59,7 +63,10 @@
 ---@field priority string|nil
 ---@field is_archived boolean headline marked with the `:ARCHIVE:` tag
 ---@field headlines OrgApiHeadline[]
---
+---@field id_get_or_create number
+---@field private _section OrgHeadline
+---@field private _index number
+
 ---@class OrgApiRefileOpts
 ---@field source OrgApiHeadline
 ---@field destination OrgApiFile | OrgApiHeadline

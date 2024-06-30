@@ -20,7 +20,6 @@ local function index_headlines(file_results, opts)
           file = file_entry.file,
           filename = file_entry.filename,
           headline = headline,
-          title = nil,
         }
         table.insert(results, entry)
       end
