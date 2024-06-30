@@ -1,4 +1,3 @@
-local config = require('telescope-orgmode.config')
 local to_actions = require('telescope-orgmode.actions')
 
 local M = {}

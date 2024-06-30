@@ -31,7 +31,13 @@ end
 ---@param headline OrgApiHeadline
 ---@return string
 function M.get_link_to_headline(headline)
-  return OrgApi.get_link_to_headline(headline._section) ---@diagnostic disable-line: invisible
+  return OrgApi.get_link_to_headline(headline)
+end
+
+---@param file OrgApiFile
+---@return string
+function M.get_link_to_file(file)
+  return OrgApi.get_link_to_file(file)
 end
 
 function M.insert_link(destination)

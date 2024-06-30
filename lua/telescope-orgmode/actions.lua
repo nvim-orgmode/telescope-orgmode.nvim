@@ -60,13 +60,14 @@ function M.insert(_)
     ---@type MatchEntry
     local entry = action_state.get_selected_entry()
 
-    -- Link to the filename by default
-    local destination = entry.value.file.filename
-
-    -- Link to a specific heading if is set
-    if entry.value.headline then
-      destination = org.get_link_to_headline(entry.value.headline)
-    end
+    local destination = (function()
+      if entry.value.headline then
+        -- Link to a specific heading if is set
+        return org.get_link_to_headline(entry.value.headline)
+      else
+        return org.get_link_to_file(entry.value.file)
+      end
+    end)()
 
     org.insert_link(destination)
     return true
