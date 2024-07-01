@@ -1,13 +1,3 @@
----@class MatchEntry
----@field value OrgHeadlineEntry | OrgFileEntry
----@field ordinal string
----@field filename string
----@field lnum number
----@field display function
----@field location string,
----@field line string,
----@field tags string,
-
 -- Type-hints copied from nvim-orgmode to simplify development
 
 ---@class OrgFileMetadata
@@ -32,6 +22,7 @@
 ---@field filename string absolute path of the current file
 ---@field headlines OrgApiHeadline[]
 ---@field is_archive_file boolean
+---@field get_link string
 ---@field private _file OrgFile
 --
 ---@class OrgRange
@@ -64,6 +55,7 @@
 ---@field is_archived boolean headline marked with the `:ARCHIVE:` tag
 ---@field headlines OrgApiHeadline[]
 ---@field id_get_or_create number
+---@field get_link string
 ---@field private _section OrgHeadline
 ---@field private _index number
 

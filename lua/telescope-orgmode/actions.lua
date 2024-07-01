@@ -1,3 +1,4 @@
+require('telescope-orgmode.typehints')
 local finders = require('telescope-orgmode.finders')
 local org = require('telescope-orgmode.org')
 
@@ -63,9 +64,9 @@ function M.insert(_)
     local destination = (function()
       if entry.value.headline then
         -- Link to a specific heading if is set
-        return org.get_link_to_headline(entry.value.headline)
+        return entry.value.headline:get_link()
       else
-        return org.get_link_to_file(entry.value.file)
+        return entry.value.file:get_link()
       end
     end)()
 

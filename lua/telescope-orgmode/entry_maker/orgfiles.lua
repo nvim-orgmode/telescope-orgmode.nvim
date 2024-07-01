@@ -1,13 +1,8 @@
-require('telescope-orgmode.typehints')
+require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
 local entry_display = require('telescope.pickers.entry_display')
 
 local M = {}
-
----@class OrgFileEntry
----@field file OrgApiFile
----@field filename string
----@field title string?
 
 ---@param file_results { file: OrgApiFile, filename: string }[]
 ---@return OrgFileEntry[]

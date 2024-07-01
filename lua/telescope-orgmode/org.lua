@@ -1,5 +1,7 @@
 require('telescope-orgmode.typehints')
 
+local OrgApiHeadline = require('orgmode.api.headline')
+local OrgApiFile = require('orgmode.api.file')
 local OrgApi = require('orgmode.api')
 
 local M = {}
@@ -26,18 +28,6 @@ end
 
 function M.refile(opts)
   return OrgApi.refile(opts)
-end
-
----@param headline OrgApiHeadline
----@return string
-function M.get_link_to_headline(headline)
-  return OrgApi.get_link_to_headline(headline)
-end
-
----@param file OrgApiFile
----@return string
-function M.get_link_to_file(file)
-  return OrgApi.get_link_to_file(file)
 end
 
 function M.insert_link(destination)
