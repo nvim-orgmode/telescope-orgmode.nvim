@@ -1,4 +1,3 @@
-require('telescope-orgmode.typehints')
 local finders = require('telescope-orgmode.finders')
 local org = require('telescope-orgmode.org')
 
