@@ -9,12 +9,12 @@ return function(opts)
   opts = config.init_opts(opts, {
     headlines = 'Search headlines',
     orgfiles = 'Search org files',
-  })
+  }, "headlines")
 
   pickers
     .new(opts, {
       prompt_title = opts.prompt_titles[opts.state.current],
-      finder = finders.headlines(opts),
+      finder = finders.from_options(opts),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
       attach_mappings = function(_, map)

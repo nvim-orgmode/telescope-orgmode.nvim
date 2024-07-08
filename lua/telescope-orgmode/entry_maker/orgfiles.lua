@@ -22,7 +22,7 @@ local function index_orgfiles(file_results)
   return results
 end
 
----Fetches entrys from OrgApi and extracts the relevant information
+---Fetches entries from OrgApi and extracts the relevant information
 ---@param opts any
 ---@return OrgFileEntry[]
 M.get_entries = function(opts)

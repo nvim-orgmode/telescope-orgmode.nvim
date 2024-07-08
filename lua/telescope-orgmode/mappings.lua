@@ -3,7 +3,7 @@ local to_actions = require('telescope-orgmode.actions')
 local M = {}
 
 function M.attach_mappings(map, opts)
-  map('i', '<C-Space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
+  map('i', '<c-space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
   M.attach_custom(map, opts)
 end
 

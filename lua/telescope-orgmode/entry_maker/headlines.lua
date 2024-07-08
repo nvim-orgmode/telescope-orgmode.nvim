@@ -25,7 +25,7 @@ local function index_headlines(file_results, opts)
 end
 
 local M = {}
----Fetches entrys from OrgApi and extracts the relevant information
+---Fetches entries from OrgApi and extracts the relevant information
 ---@param opts any
 ---@return OrgHeadlineEntry[]
 M.get_entries = function(opts)

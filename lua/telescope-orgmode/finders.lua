@@ -19,4 +19,16 @@ function M.orgfiles(opts)
   })
 end
 
+-- return the correct finder for the current state
+function M.from_options(opts)
+  if opts.state.current == 'headlines' then
+    return M.headlines(opts)
+  elseif opts.state.current == 'orgfiles' then
+    return M.orgfiles(opts)
+  else
+    -- this should not happen
+    error(string.format('Invalid state %s', opts.state.current))
+  end
+end
+
 return M
