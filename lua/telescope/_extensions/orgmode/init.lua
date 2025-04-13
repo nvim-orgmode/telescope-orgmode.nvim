@@ -1,6 +1,5 @@
 -- TODO: include headline.level and headline.is_archived() as part of the
 -- public orgmode api
--- TODO: add highlight groups
 
 return require('telescope').register_extension({
   setup = require('telescope-orgmode').setup,
