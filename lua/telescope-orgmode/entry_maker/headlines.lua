@@ -39,14 +39,19 @@ M.make_entry = function(opts)
   local displayer = entry_display.create({
     separator = ' ',
     items = {
-      { width = vim.F.if_nil(opts.location_width, 20) },
+      { width = vim.F.if_nil(opts.location_width, 16) },
+      { width = vim.F.if_nil(opts.location_width, 24) },
       { remaining = true },
     },
   })
 
   ---@param entry MatchEntry
   local function make_display(entry)
-    return displayer({ entry.location, entry.tags .. ' ' .. entry.line })
+    return displayer({
+      {entry.location, "TelescopeResultsComment"},
+      {entry.tags, "@org.tag"},
+      {entry.line, "@org.headline.level"..entry.headline_level},
+    })
   end
 
   return function(entry)
@@ -66,6 +71,7 @@ M.make_entry = function(opts)
       location = location,
       line = line,
       tags = tags,
+      headline_level = headline.level
     }
   end
 end
