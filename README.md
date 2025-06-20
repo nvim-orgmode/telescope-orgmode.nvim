@@ -113,7 +113,7 @@ require('telescope').setup({
 For a particular command you can pass it directly in your key mapping to the function:
 
 ```lua
-require('telescope').extension.orgmode.search_headings({ max_depth = 3 })
+require('telescope').extensions.orgmode.search_headings({ max_depth = 3 })
 ```
 
 You can also create a key mapping, that allows you to search directly for org files:
@@ -123,7 +123,7 @@ vim.set.keymap(
   "n",
   "<Leader>off", 
   function()
-    require('telescope').extension.orgmode.search_headings({ mode = "orgfiles" })
+    require('telescope').extensions.orgmode.search_headings({ mode = "orgfiles" })
   end,
   { desc = "Find org files"}
 )
