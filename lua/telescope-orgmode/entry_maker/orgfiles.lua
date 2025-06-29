@@ -4,17 +4,14 @@ local entry_display = require('telescope.pickers.entry_display')
 
 local M = {}
 
----@param file_results { file: OrgApiFile, filename: string }[]
+---@param file_results { filename: string, title: string, headline: string }[]
 ---@return OrgFileEntry[]
 local function index_orgfiles(file_results)
   local results = {}
   for _, file_entry in ipairs(file_results) do
     local entry = {
-      file = file_entry.file,
       filename = file_entry.filename,
-      -- not beautiful to access a private property, but this is the only way to get the title
-      ---@diagnostic disable-next-line: invisible, undefined-field
-      title = file_entry.file._file:get_directive('TITLE') or nil,
+      title = file_entry.title,
       headline = nil,
     }
     table.insert(results, entry)
