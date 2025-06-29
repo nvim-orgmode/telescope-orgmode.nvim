@@ -3,15 +3,14 @@ local OrgApi = require('orgmode.api')
 local M = {}
 
 function M.load_files(opts)
-  ---@type { file: OrgApiFile, filename: string, last_used: number }[]
+  ---@type { filename: string, last_used: number, title: string }[]
   local file_results = vim.tbl_map(function(file)
-    local file_stat = vim.uv.fs_stat(file.filename) or 0
-    return { file = file, filename = file.filename, last_used = file_stat.mtime.sec }
-  end, OrgApi.load())
+    return { filename = file.filename, last_used = file.metadata.mtime, title = file:get_title()   }
+  end, require('orgmode').files:all())
 
   if not opts.archived then
     file_results = vim.tbl_filter(function(entry)
-      return not entry.file.is_archive_file
+      return not (vim.fn.fnamemodify(entry.filename, ':e') == 'org_archive')
     end, file_results)
   end
 
