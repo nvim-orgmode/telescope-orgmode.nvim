@@ -2,23 +2,16 @@ require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
 local entry_display = require('telescope.pickers.entry_display')
 
----@param file_results { file: OrgApiFile, filename: string }[]
+---@param headline_results { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
 ---@return OrgHeadlineEntry[]
-local function index_headlines(file_results, opts)
+local function index_headlines(headline_results, opts)
   local results = {}
-  for _, file_entry in ipairs(file_results) do
-    for _, headline in ipairs(file_entry.file.headlines) do
-      local allowed_depth = opts.max_depth == nil or headline.level <= opts.max_depth
-      local allowed_archive = opts.archived or not headline.is_archived
-      if allowed_depth and allowed_archive then
-        local entry = {
-          file = file_entry.file,
-          filename = file_entry.filename,
-          headline = headline,
-        }
-        table.insert(results, entry)
-      end
-    end
+  for _, headline in ipairs(headline_results) do
+    local entry = {
+      filename = headline.filename,
+      headline = headline,
+    }
+    table.insert(results, entry)
   end
 
   return results
@@ -29,7 +22,7 @@ local M = {}
 ---@param opts any
 ---@return OrgHeadlineEntry[]
 M.get_entries = function(opts)
-  return index_headlines(org.load_files(opts), opts)
+  return index_headlines(org.load_headlines(opts), opts)
 end
 
 ---Entry-Maker for Telescope
@@ -39,8 +32,8 @@ M.make_entry = function(opts)
   local displayer = entry_display.create({
     separator = ' ',
     items = {
-      { width = vim.F.if_nil(opts.location_width, 16) },
       { width = vim.F.if_nil(opts.location_width, 24) },
+      { width = vim.F.if_nil(opts.tags_width, 20) },
       { remaining = true },
     },
   })
@@ -56,7 +49,7 @@ M.make_entry = function(opts)
 
   return function(entry)
     local headline = entry.headline
-    local lnum = headline.position.start_line
+    local lnum = headline.line_number
     local location = string.format('%s:%i', vim.fn.fnamemodify(entry.filename, ':t'), lnum)
     local line = string.format('%s %s', string.rep('*', headline.level), headline.title)
     local tags = table.concat(headline.all_tags, ':')

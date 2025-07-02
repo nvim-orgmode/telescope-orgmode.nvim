@@ -4,6 +4,7 @@ local M = {}
 
 function M.attach_mappings(map, opts)
   map('i', '<c-space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
+  map('n', '<c-space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
   M.attach_custom(map, opts)
 end
 
