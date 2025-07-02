@@ -77,6 +77,12 @@ require('telescope').extensions.orgmode.insert_link
 By pressing `<C-Space>` the picker state can be toggled between two modes.
 Every mode is available in every function.
 
+### Current file only mode
+
+In headline mode, you can press `<C-f>` to toggle between showing all headlines
+vs only headlines from the current file. This is useful when you want to focus
+on the current file's structure.
+
 ### Search headlines
 
 This is the first and default mode. It shows all the headlines, initially
@@ -116,15 +122,45 @@ For a particular command you can pass it directly in your key mapping to the fun
 require('telescope').extension.orgmode.search_headings({ max_depth = 3 })
 ```
 
-You can also create a key mapping, that allows you to search directly for org files:
+### Custom keymaps
+
+You can customize the telescope picker keymaps by passing a `mappings` table:
 
 ```lua
-vim.set.keymap(
+require('telescope').extensions.orgmode.search_headings({
+  mappings = {
+    i = {
+      ['<C-l>'] = require('telescope-orgmode.actions').toggle_current_file_only,
+      ['<C-s>'] = require('telescope-orgmode.actions').toggle_headlines_orgfiles,
+    },
+    n = {
+      ['<C-l>'] = require('telescope-orgmode.actions').toggle_current_file_only,
+      ['<C-s>'] = require('telescope-orgmode.actions').toggle_headlines_orgfiles,
+    }
+  }
+})
+```
+
+You can also create key mappings for specific modes:
+
+```lua
+-- Search only org files
+vim.keymap.set(
   "n",
-  "<Leader>off", 
+  "<Leader>off",
   function()
-    require('telescope').extension.orgmode.search_headings({ mode = "orgfiles" })
+    require('telescope').extensions.orgmode.search_headings({ mode = "orgfiles" })
   end,
   { desc = "Find org files"}
+)
+
+-- Search headlines in current file only
+vim.keymap.set(
+  "n",
+  "<Leader>ofc",
+  function()
+    require('telescope').extensions.orgmode.search_headings({ only_current_file = true })
+  end,
+  { desc = "Find headlines in current file"}
 )
 ```

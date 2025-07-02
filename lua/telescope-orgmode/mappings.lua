@@ -5,6 +5,8 @@ local M = {}
 function M.attach_mappings(map, opts)
   map('i', '<c-space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
   map('n', '<c-space>', to_actions.toggle_headlines_orgfiles(opts), { desc = 'Toggle headline/orgfile' })
+  map('i', '<c-f>', to_actions.toggle_current_file_only(opts), { desc = 'Toggle current file only' })
+  map('n', '<c-f>', to_actions.toggle_current_file_only(opts), { desc = 'Toggle current file only' })
   M.attach_custom(map, opts)
 end
 

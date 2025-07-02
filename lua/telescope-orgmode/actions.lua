@@ -33,6 +33,18 @@ function M.search_orgfiles(opts)
   end
 end
 
+function M.toggle_current_file_only(opts)
+  return function(prompt_bufnr)
+    -- Only toggle if we're in headlines mode
+    if opts.state.current ~= 'headlines' then
+      return
+    end
+
+    opts.only_current_file = not opts.only_current_file
+    M._find_headlines(opts, prompt_bufnr)
+  end
+end
+
 function M.refile(closest_headline)
   return function(prompt_bufnr)
     local entry = action_state.get_selected_entry()

@@ -28,6 +28,17 @@ end
 function M.load_headlines(opts)
   -- Get files sorted by modification time (most recent first)
   local files = require('orgmode').files:all()
+
+  if opts.only_current_file then
+    local current_file = opts.original_file or vim.api.nvim_buf_get_name(0)
+    if current_file == '' then
+      current_file = vim.fn.expand('%:p')
+    end
+    files = vim.tbl_filter(function(file)
+      return file.filename == current_file
+    end, files)
+  end
+
   if not opts.archived then
     files = vim.tbl_filter(function(file)
       return not (vim.fn.fnamemodify(file.filename, ':e') == 'org_archive')

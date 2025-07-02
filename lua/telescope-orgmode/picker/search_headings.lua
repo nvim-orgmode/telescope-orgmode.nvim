@@ -11,6 +11,10 @@ return function(opts)
     orgfiles = 'Search org files',
   }, "headlines")
 
+  -- Capture the current buffer before opening telescope
+  opts.original_buffer = vim.api.nvim_get_current_buf()
+  opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
+
   pickers
     .new(opts, {
       prompt_title = opts.prompt_titles[opts.state.current],
