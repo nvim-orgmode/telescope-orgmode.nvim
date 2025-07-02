@@ -3,9 +3,9 @@ local OrgApi = require('orgmode.api')
 local M = {}
 
 function M.load_files(opts)
-  ---@type { filename: string, last_used: number, title: string }[]
+  ---@type { filename: string, title: string }[]
   local file_results = vim.tbl_map(function(file)
-    return { filename = file.filename, last_used = file.metadata.mtime, title = file:get_title() }
+    return { filename = file.filename, title = file:get_title() }
   end, require('orgmode').files:all())
 
   if not opts.archived then
@@ -15,16 +15,17 @@ function M.load_files(opts)
   end
 
   table.sort(file_results, function(a, b)
-    return a.last_used > b.last_used
+    local stat_a = vim.uv.fs_stat(a.filename)
+    local stat_b = vim.uv.fs_stat(b.filename)
+    local mtime_a = stat_a and stat_a.mtime.sec or 0
+    local mtime_b = stat_b and stat_b.mtime.sec or 0
+    return mtime_a > mtime_b
   end)
 
   return file_results
 end
 
 function M.load_headlines(opts)
-  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
-  local results = {}
-
   -- Get files sorted by modification time (most recent first)
   local files = require('orgmode').files:all()
   if not opts.archived then
@@ -34,9 +35,15 @@ function M.load_headlines(opts)
   end
 
   table.sort(files, function(a, b)
-    return a.metadata.mtime < b.metadata.mtime
+    local stat_a = vim.uv.fs_stat(a.filename)
+    local stat_b = vim.uv.fs_stat(b.filename)
+    local mtime_a = stat_a and stat_a.mtime.sec or 0
+    local mtime_b = stat_b and stat_b.mtime.sec or 0
+    return mtime_a > mtime_b
   end)
 
+  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
+  local results = {}
   for _, file in ipairs(files) do
     -- Skip archive files unless explicitly requested
     local headlines = opts.archived and file:get_headlines_including_archived() or file:get_headlines()
