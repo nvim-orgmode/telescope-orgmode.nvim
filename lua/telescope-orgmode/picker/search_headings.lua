@@ -9,7 +9,7 @@ return function(opts)
   opts = config.init_opts(opts, {
     headlines = 'Search headlines',
     orgfiles = 'Search org files',
-  }, "headlines")
+  }, 'headlines')
 
   -- Capture the current buffer before opening telescope
   opts.original_buffer = vim.api.nvim_get_current_buf()

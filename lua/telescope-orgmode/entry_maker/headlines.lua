@@ -41,9 +41,9 @@ M.make_entry = function(opts)
   ---@param entry MatchEntry
   local function make_display(entry)
     return displayer({
-      {entry.location, "TelescopeResultsComment"},
-      {entry.tags, "@org.tag"},
-      {entry.line, "@org.headline.level"..entry.headline_level},
+      { entry.location, 'TelescopeResultsComment' },
+      { entry.tags, '@org.tag' },
+      { entry.line, '@org.headline.level' .. entry.headline_level },
     })
   end
 
@@ -64,7 +64,7 @@ M.make_entry = function(opts)
       location = location,
       line = line,
       tags = tags,
-      headline_level = headline.level
+      headline_level = headline.level,
     }
   end
 end

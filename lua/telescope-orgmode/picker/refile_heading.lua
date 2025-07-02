@@ -12,7 +12,7 @@ return function(opts)
   opts = config.init_opts(opts, {
     headlines = 'Refile to headline',
     orgfiles = 'Refile to orgfile',
-  }, "headlines")
+  }, 'headlines')
 
   local closest_headline = org.get_closest_headline()
 

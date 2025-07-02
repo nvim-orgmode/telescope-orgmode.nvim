@@ -11,7 +11,7 @@ return function(opts)
   opts = config.init_opts(opts, {
     headlines = 'Insert link to headline',
     orgfiles = 'Insert link to org file',
-  }, "headlines")
+  }, 'headlines')
 
   pickers
     .new(opts, {

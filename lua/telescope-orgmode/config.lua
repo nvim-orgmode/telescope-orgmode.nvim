@@ -12,7 +12,7 @@ function M.init_opts(opts, prompt_titles, default_state)
   opts = vim.tbl_extend('force', M.opts, opts or {})
   opts.mode = opts.mode or default_state
   if not prompt_titles[opts.mode] then
-    error("Invalid mode '" .. opts.mode .. "'. Valid modes are: " .. table.concat(vim.tbl_keys(prompt_titles), ", "))
+    error("Invalid mode '" .. opts.mode .. "'. Valid modes are: " .. table.concat(vim.tbl_keys(prompt_titles), ', '))
   end
   opts.prompt_titles = prompt_titles
   opts.states = {}
