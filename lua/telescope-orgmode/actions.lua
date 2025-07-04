@@ -50,12 +50,12 @@ function M.refile(closest_headline)
     local entry = action_state.get_selected_entry()
     actions.close(prompt_bufnr)
 
-    -- Refile to the file by default
-    local destination = entry.value.file
+    local destination = entry.value.headline
+      and org.get_api_headline(entry.filename, entry.value.headline.line_number)
+      or org.get_api_file(entry.filename)
 
-    -- Refile to a specific heading if is set
-    if entry.value.headline then
-      destination = entry.value.headline
+    if not destination then
+      error('Could not find destination headline or file')
     end
 
     return org.refile({
@@ -72,14 +72,15 @@ function M.insert(_)
     ---@type MatchEntry
     local entry = action_state.get_selected_entry()
 
-    local destination = (function()
-      if entry.value.headline then
-        -- Link to a specific heading if is set
-        return entry.value.headline:get_link()
-      else
-        return entry.value.file:get_link()
-      end
-    end)()
+    local api_object = entry.value.headline
+      and org.get_api_headline(entry.filename, entry.value.headline.line_number)
+      or org.get_api_file(entry.filename)
+    
+    if not api_object then
+      error('Could not find ' .. (entry.value.headline and 'headline' or 'file') .. ' for link')
+    end
+    
+    local destination = api_object:get_link()
 
     org.insert_link(destination)
     return true

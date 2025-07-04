@@ -95,4 +95,27 @@ function M.get_closest_headline()
   return OrgApi.current():get_closest_headline()
 end
 
+--- Get the API headline object for a given filename and line number
+---@param filename string
+---@param line_number number
+---@return table|nil
+function M.get_api_headline(filename, line_number)
+  local api_file = OrgApi.load(filename)
+  if api_file then
+    for _, headline in ipairs(api_file.headlines) do
+      if headline.position.start_line == line_number then
+        return headline
+      end
+    end
+  end
+  return nil
+end
+
+--- Get the API file object for a given filename
+---@param filename string
+---@return table|nil
+function M.get_api_file(filename)
+  return OrgApi.load(filename)
+end
+
 return M
