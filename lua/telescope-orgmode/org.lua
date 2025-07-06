@@ -1,4 +1,5 @@
 local OrgApi = require('orgmode.api')
+local OrgAgendaApi = require('orgmode.api.agenda')
 
 local M = {}
 
@@ -89,10 +90,19 @@ end
 --- In case of nested sections, it is the closest headline within the headline
 --- tree.
 ---
---- The precondition to run this function successfully is, that the cursor is
---- placed in an orgfile when the function is called.
+--- Works in both org files and agenda views:
+--- - For org files: Uses treesitter parser to search the tree
+--- - For agenda views: Uses the agenda API to get the headline at cursor
 function M.get_closest_headline()
-  return OrgApi.current():get_closest_headline()
+  -- Handle different buffer types explicitly
+  if vim.bo.filetype == 'org' then
+    return OrgApi.current():get_closest_headline()
+  elseif vim.bo.filetype == 'orgagenda' then
+    return OrgAgendaApi.get_headline_at_cursor()
+  end
+
+  -- Not in org or agenda buffer
+  return nil
 end
 
 --- Get the API headline object for a given filename and line number
@@ -153,7 +163,7 @@ function M.get_link_destination(entry, opts)
   if entry.value.headline and opts.original_file and entry.filename == opts.original_file then
     return M.get_intra_file_link(entry)
   end
-  
+
   -- Use inter-file format for everything else
   return M.get_inter_file_link(entry)
 end
