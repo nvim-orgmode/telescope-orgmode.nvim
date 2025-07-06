@@ -65,22 +65,14 @@ function M.refile(closest_headline)
   end
 end
 
-function M.insert(_)
+function M.insert(opts)
   return function(prompt_bufnr)
     actions.close(prompt_bufnr)
 
     ---@type MatchEntry
     local entry = action_state.get_selected_entry()
 
-    local api_object = entry.value.headline
-      and org.get_api_headline(entry.filename, entry.value.headline.line_number)
-      or org.get_api_file(entry.filename)
-    
-    if not api_object then
-      error('Could not find ' .. (entry.value.headline and 'headline' or 'file') .. ' for link')
-    end
-    
-    local destination = api_object:get_link()
+    local destination = org.get_link_destination(entry, opts)
 
     org.insert_link(destination)
     return true

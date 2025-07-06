@@ -118,4 +118,44 @@ function M.get_api_file(filename)
   return OrgApi.load(filename)
 end
 
+--- Get intra-file link for headline (simple *Headline format)
+---@param entry table
+---@return string
+function M.get_intra_file_link(entry)
+  return '*' .. entry.value.headline.title
+end
+
+--- Get inter-file link using full API format
+---@param entry table
+---@return string
+function M.get_inter_file_link(entry)
+  if entry.value.headline then
+    local api_headline = M.get_api_headline(entry.filename, entry.value.headline.line_number)
+    if api_headline then
+      return api_headline:get_link()
+    end
+    error('Could not find headline for link')
+  else
+    local api_file = M.get_api_file(entry.filename)
+    if api_file then
+      return api_file:get_link()
+    end
+    error('Could not find file for link')
+  end
+end
+
+--- Get link destination (chooses intra-file vs inter-file format)
+---@param entry table
+---@param opts table
+---@return string
+function M.get_link_destination(entry, opts)
+  -- Use intra-file format for headlines in the same file
+  if entry.value.headline and opts.original_file and entry.filename == opts.original_file then
+    return M.get_intra_file_link(entry)
+  end
+  
+  -- Use inter-file format for everything else
+  return M.get_inter_file_link(entry)
+end
+
 return M

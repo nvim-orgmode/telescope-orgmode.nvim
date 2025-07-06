@@ -20,7 +20,7 @@ return function(opts)
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
       attach_mappings = function(_, map)
-        action_set.select:replace(actions.insert())
+        action_set.select:replace(actions.insert(opts))
         mappings.attach_mappings(map, opts)
         return true
       end,
