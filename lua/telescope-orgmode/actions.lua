@@ -92,7 +92,7 @@ end
 function M._update_picker(finder, title, prompt_bufnr)
   local current_picker = action_state.get_current_picker(prompt_bufnr)
 
-  current_picker.layout.prompt.border:change_title(title)
+  current_picker.prompt_border:change_title(title)
   current_picker:refresh(finder)
 end
 
