@@ -145,12 +145,14 @@ require('telescope').extensions.orgmode.search_headings({ max_depth = 3 })
 
 ### Column visibility
 
-TODO states and priorities are shown by default. To disable:
+All columns are shown by default. To selectively disable columns:
 
 ```lua
 require('telescope').setup({
     extensions = {
         orgmode = {
+            show_location = false,
+            show_tags = false,
             show_todo_state = false,
             show_priority = false,
         }
