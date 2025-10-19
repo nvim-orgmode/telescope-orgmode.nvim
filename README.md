@@ -80,14 +80,15 @@ require('telescope').extensions.orgmode.search_tags
 ### Search headlines
 
 Search and navigate to any headline across your org files with fuzzy matching.
-Headlines are sorted by most recently modified file by default.
+Headlines are sorted by most recently modified file by default. TODO states and
+priorities are displayed as columns and can be filtered in the search.
 
 **Keybindings:**
 - `<C-Space>`: Toggle between headline and org file search modes
 - `<C-f>`: Toggle between all headlines and current file only
 - `<C-t>`: Open tag picker for tag-based filtering
 
-The maximum headline level can be [configured](#configuration).
+The maximum headline level and column visibility can be [configured](#configuration).
 
 ### Search org files
 
@@ -140,6 +141,21 @@ For a particular command you can pass it directly in your key mapping:
 
 ```lua
 require('telescope').extensions.orgmode.search_headings({ max_depth = 3 })
+```
+
+### Column visibility
+
+TODO states and priorities are shown by default. To disable:
+
+```lua
+require('telescope').setup({
+    extensions = {
+        orgmode = {
+            show_todo_state = false,
+            show_priority = false,
+        }
+    }
+})
 ```
 
 ### Tag search options

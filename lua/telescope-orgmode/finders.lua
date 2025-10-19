@@ -6,8 +6,10 @@ local finders = require('telescope.finders')
 local M = {}
 
 function M.headlines(opts)
+  local results, widths = headlines.get_entries(opts)
+  opts.widths = widths
   return finders.new_table({
-    results = headlines.get_entries(opts),
+    results = results,
     entry_maker = opts.entry_maker or headlines.make_entry(opts),
   })
 end

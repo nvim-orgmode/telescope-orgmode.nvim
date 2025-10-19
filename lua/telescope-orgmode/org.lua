@@ -54,7 +54,7 @@ function M.load_headlines(opts)
     return mtime_a > mtime_b
   end)
 
-  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
+  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
   local results = {}
   for _, file in ipairs(files) do
     -- Skip archive files unless explicitly requested
@@ -63,6 +63,8 @@ function M.load_headlines(opts)
       if
         (not opts.max_depth or headline:get_level() <= opts.max_depth) and (opts.archived or not headline:is_archived())
       then
+        local todo_keyword = headline:get_todo()
+        local priority = headline:get_priority()
         table.insert(results, {
           filename = file.filename,
           title = headline:get_title(),
@@ -70,6 +72,9 @@ function M.load_headlines(opts)
           line_number = headline:get_range().start_line,
           all_tags = headline:get_tags(),
           is_archived = headline:is_archived(),
+          todo_value = todo_keyword,
+          todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
+          priority = (priority and priority ~= '') and priority or nil,
         })
       end
     end
@@ -82,7 +87,7 @@ end
 --- Returns same data structure as load_headlines() for consistency
 ---@param query string Orgmode search query (e.g., "+work", "tag1|tag2")
 ---@param opts { only_current_file?: boolean, archived?: boolean, max_depth?: number, original_file?: string }
----@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
+---@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
 function M.load_headlines_by_search(query, opts)
   local Search = require('orgmode.files.elements.search')
   local search = Search:new(query)
@@ -118,6 +123,8 @@ function M.load_headlines_by_search(query, opts)
     for _, headline in ipairs(file:apply_search(search, false)) do
       if not opts.max_depth or headline:get_level() <= opts.max_depth then
         if opts.archived or not headline:is_archived() then
+          local todo_keyword = headline:get_todo()
+          local priority = headline:get_priority()
           table.insert(results, {
             filename = file.filename,
             title = headline:get_title(),
@@ -125,6 +132,9 @@ function M.load_headlines_by_search(query, opts)
             line_number = headline:get_range().start_line,
             all_tags = headline:get_tags(),
             is_archived = headline:is_archived(),
+            todo_value = todo_keyword,
+            todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
+            priority = (priority and priority ~= '') and priority or nil,
           })
         end
       end

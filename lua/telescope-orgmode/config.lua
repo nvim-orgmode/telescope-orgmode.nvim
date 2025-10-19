@@ -2,6 +2,8 @@ local M = {}
 
 M.opts = {
   max_depth = nil,
+  show_todo_state = true,
+  show_priority = true,
 }
 
 function M.setup(ext_opts)
