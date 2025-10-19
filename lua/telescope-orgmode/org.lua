@@ -78,6 +78,62 @@ function M.load_headlines(opts)
   return results
 end
 
+--- Load headlines using orgmode Search API with tag-based filtering
+--- Returns same data structure as load_headlines() for consistency
+---@param query string Orgmode search query (e.g., "+work", "tag1|tag2")
+---@param opts { only_current_file?: boolean, archived?: boolean, max_depth?: number, original_file?: string }
+---@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean }[]
+function M.load_headlines_by_search(query, opts)
+  local Search = require('orgmode.files.elements.search')
+  local search = Search:new(query)
+
+  local files = require('orgmode').files:all()
+
+  if opts.only_current_file then
+    local current_file = opts.original_file or vim.api.nvim_buf_get_name(0)
+    if current_file == '' then
+      current_file = vim.fn.expand('%:p')
+    end
+    files = vim.tbl_filter(function(file)
+      return file.filename == current_file
+    end, files)
+  end
+
+  if not opts.archived then
+    files = vim.tbl_filter(function(file)
+      return not (vim.fn.fnamemodify(file.filename, ':e') == 'org_archive')
+    end, files)
+  end
+
+  table.sort(files, function(a, b)
+    local stat_a = vim.uv.fs_stat(a.filename)
+    local stat_b = vim.uv.fs_stat(b.filename)
+    local mtime_a = stat_a and stat_a.mtime.sec or 0
+    local mtime_b = stat_b and stat_b.mtime.sec or 0
+    return mtime_a > mtime_b
+  end)
+
+  local results = {}
+  for _, file in ipairs(files) do
+    for _, headline in ipairs(file:apply_search(search, false)) do
+      if not opts.max_depth or headline:get_level() <= opts.max_depth then
+        if opts.archived or not headline:is_archived() then
+          table.insert(results, {
+            filename = file.filename,
+            title = headline:get_title(),
+            level = headline:get_level(),
+            line_number = headline:get_range().start_line,
+            all_tags = headline:get_tags(),
+            is_archived = headline:is_archived(),
+          })
+        end
+      end
+    end
+  end
+
+  return results
+end
+
 function M.refile(opts)
   return OrgApi.refile(opts)
 end
@@ -87,25 +143,22 @@ function M.insert_link(destination)
 end
 
 --- Returns the headline of the section, the cursor is currently placed in.
---- In case of nested sections, it is the closest headline within the headline
---- tree.
+--- In case of nested sections, it is the closest headline within the headline tree.
 ---
 --- Works in both org files and agenda views:
 --- - For org files: Uses treesitter parser to search the tree
 --- - For agenda views: Uses the agenda API to get the headline at cursor
+---@return table|nil
 function M.get_closest_headline()
-  -- Handle different buffer types explicitly
   if vim.bo.filetype == 'org' then
     return OrgApi.current():get_closest_headline()
   elseif vim.bo.filetype == 'orgagenda' then
     return OrgAgendaApi.get_headline_at_cursor()
   end
-
-  -- Not in org or agenda buffer
   return nil
 end
 
---- Get the API headline object for a given filename and line number
+--- Converts data table to orgmode API object for refile operations
 ---@param filename string
 ---@param line_number number
 ---@return table|nil
@@ -121,22 +174,22 @@ function M.get_api_headline(filename, line_number)
   return nil
 end
 
---- Get the API file object for a given filename
+--- Converts filename to orgmode API file object
 ---@param filename string
 ---@return table|nil
 function M.get_api_file(filename)
   return OrgApi.load(filename)
 end
 
---- Get intra-file link for headline (simple *Headline format)
----@param entry table
+--- Intra-file links are simpler and work without IDs
+---@param entry { filename: string, value: { headline: { title: string } } }
 ---@return string
 function M.get_intra_file_link(entry)
   return '*' .. entry.value.headline.title
 end
 
---- Get inter-file link using full API format
----@param entry table
+--- Inter-file links require full API resolution for IDs
+---@param entry { filename: string, value: { headline?: { line_number: number } } }
 ---@return string
 function M.get_inter_file_link(entry)
   if entry.value.headline then
@@ -154,17 +207,14 @@ function M.get_inter_file_link(entry)
   end
 end
 
---- Get link destination (chooses intra-file vs inter-file format)
----@param entry table
----@param opts table
+--- Chooses simpler format when possible (intra-file links don't need IDs)
+---@param entry { filename: string, value: { headline?: table } }
+---@param opts { original_file?: string }
 ---@return string
 function M.get_link_destination(entry, opts)
-  -- Use intra-file format for headlines in the same file
   if entry.value.headline and opts.original_file and entry.filename == opts.original_file then
     return M.get_intra_file_link(entry)
   end
-
-  -- Use inter-file format for everything else
   return M.get_inter_file_link(entry)
 end
 

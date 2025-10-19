@@ -15,13 +15,16 @@ return function(opts)
   }, 'headlines')
 
   local closest_headline = org.get_closest_headline()
-  
+
   if not closest_headline then
     local filetype = vim.bo.filetype
     if filetype == 'org' then
       vim.notify('No headline found at cursor position in org file', vim.log.levels.WARN)
     else
-      vim.notify('No headline found at cursor position. Make sure cursor is on a valid agenda item or org headline.', vim.log.levels.WARN)
+      vim.notify(
+        'No headline found at cursor position. Make sure cursor is on a valid agenda item or org headline.',
+        vim.log.levels.WARN
+      )
     end
     return
   end

@@ -23,11 +23,11 @@ function M.init_opts(opts, prompt_titles, default_state)
     end
     table.insert(opts.states, state)
   end
-  
+
   -- Capture the current buffer before opening telescope
   opts.original_buffer = vim.api.nvim_get_current_buf()
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
-  
+
   return opts
 end
 

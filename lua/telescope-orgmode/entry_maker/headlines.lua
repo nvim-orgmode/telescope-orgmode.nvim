@@ -19,14 +19,23 @@ end
 
 local M = {}
 ---Fetches entries from OrgApi and extracts the relevant information
----@param opts any
+---Routes to search-based or bulk loading based on tag_query presence
+---@param opts { tag_query?: string, only_current_file?: boolean, archived?: boolean, max_depth?: number }
 ---@return OrgHeadlineEntry[]
 M.get_entries = function(opts)
-  return index_headlines(org.load_headlines(opts), opts)
+  -- Route to search-based loader if tag_query provided
+  local headline_data
+  if opts.tag_query then
+    headline_data = org.load_headlines_by_search(opts.tag_query, opts)
+  else
+    headline_data = org.load_headlines(opts)
+  end
+
+  return index_headlines(headline_data, opts)
 end
 
 ---Entry-Maker for Telescope
----@param opts any
+---@param opts { location_width?: number, tags_width?: number }
 ---@return fun(entry: OrgHeadlineEntry):MatchEntry
 M.make_entry = function(opts)
   local displayer = entry_display.create({

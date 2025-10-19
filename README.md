@@ -32,6 +32,7 @@ Refile heading from capture or current file under destination with `:Telescope o
       vim.keymap.set("n", "<leader>r", require("telescope").extensions.orgmode.refile_heading)
       vim.keymap.set("n", "<leader>fh", require("telescope").extensions.orgmode.search_headings)
       vim.keymap.set("n", "<leader>li", require("telescope").extensions.orgmode.insert_link)
+      vim.keymap.set("n", "<leader>ot", require("telescope").extensions.orgmode.search_tags)
     end,
   }
 ```
@@ -62,6 +63,7 @@ vim.api.nvim_create_autocmd('FileType', {
 :Telescope orgmode search_headings
 :Telescope orgmode refile_heading
 :Telescope orgmode insert_link
+:Telescope orgmode search_tags
 ```
 
 ## Available functions
@@ -70,40 +72,58 @@ vim.api.nvim_create_autocmd('FileType', {
 require('telescope').extensions.orgmode.search_headings
 require('telescope').extensions.orgmode.refile_heading
 require('telescope').extensions.orgmode.insert_link
+require('telescope').extensions.orgmode.search_tags
 ```
 
-## Toggle between headline and org file search
-
-By pressing `<C-Space>` the picker state can be toggled between two modes.
-Every mode is available in every function.
-
-### Current file only mode
-
-In headline mode, you can press `<C-f>` to toggle between showing all headlines
-vs only headlines from the current file. This is useful when you want to focus
-on the current file's structure.
+## Features
 
 ### Search headlines
 
-This is the first and default mode. It shows all the headlines, initially
-sorted by most recently changed org file. The level of headlines can be
-[configured](#configuration).
+Search and navigate to any headline across your org files with fuzzy matching.
+Headlines are sorted by most recently modified file by default.
+
+**Keybindings:**
+- `<C-Space>`: Toggle between headline and org file search modes
+- `<C-f>`: Toggle between all headlines and current file only
+- `<C-t>`: Open tag picker for tag-based filtering
+
+The maximum headline level can be [configured](#configuration).
 
 ### Search org files
 
-This is the second mode, which shows only org files. If the org file has a
-title, it is shown (and used for filtering) instead of the filename. This is
-particular useful in connection with
-[org-roam.nvim](https://github.com/chipsenkbeil/org-roam.nvim) to fuzzy search
-for roam nodes.
+Search through org files rather than individual headlines. When org files have
+a `#+TITLE:` property, it is used for display and filtering instead of the
+filename. This is particularly useful with
+[org-roam.nvim](https://github.com/chipsenkbeil/org-roam.nvim) for fuzzy
+searching roam nodes.
+
+**Keybindings:**
+- `<C-Space>`: Toggle back to headline search mode
+
+### Search by tags
+
+Tag-based navigation workflow for quickly filtering headlines by org tags.
+Shows all tags with occurrence counts (e.g., `:work: (42)`) sorted by
+frequency. The preview pane displays up to 50 headlines containing the
+selected tag. Selecting a tag opens the headline search pre-filtered by
+that tag, allowing further refinement.
+
+**Keybindings:**
+- `<C-s>`: Toggle sort mode (frequency ↔ alphabetical)
+- `<C-t>`: Return to headline search (preserves tag filter)
+- `<CR>`: Select tag and open filtered headline search
+
+The initial sort mode can be [configured](#tag-search-options).
 
 ## Configuration
 
-You can limit the maximum headline level included in the search. `nil` means
-unlimited level, `0` means only search for whole org files. The later is
-equivalent with [org file mode](#search-org-files)
+### Maximum headline level
 
-To enable the configuration for all commands, you pass the option to the setup
+You can limit the maximum headline level included in the search. `nil` means
+unlimited level, `0` means only search for whole org files. The latter is
+equivalent with [org file search mode](#search-org-files).
+
+To enable the configuration for all commands, pass the option to the setup
 function of telescope:
 
 ```lua
@@ -116,11 +136,29 @@ require('telescope').setup({
 })
 ```
 
-For a particular command you can pass it directly in your key mapping to the function:
+For a particular command you can pass it directly in your key mapping:
 
 ```lua
-require('telescope').extension.orgmode.search_headings({ max_depth = 3 })
+require('telescope').extensions.orgmode.search_headings({ max_depth = 3 })
 ```
+
+### Tag search options
+
+The tag search can be configured with an initial sort mode:
+
+```lua
+-- Sort tags alphabetically by default
+vim.keymap.set("n", "<leader>ot", function()
+  require("telescope").extensions.orgmode.search_tags({ initial_sort = "alphabetical" })
+end)
+
+-- Sort tags by frequency by default (default behavior)
+vim.keymap.set("n", "<leader>ot", function()
+  require("telescope").extensions.orgmode.search_tags({ initial_sort = "frequency" })
+end)
+```
+
+Tags are case-sensitive (`:work:` ≠ `:Work:`).
 
 ### Custom keymaps
 

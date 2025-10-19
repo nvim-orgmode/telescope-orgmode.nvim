@@ -45,13 +45,26 @@ function M.toggle_current_file_only(opts)
   end
 end
 
+function M.open_tag_picker(opts)
+  return function(prompt_bufnr)
+    actions.close(prompt_bufnr)
+
+    --- Pre-fill search with previously selected tag to support round-trip navigation
+    local selected_tag = opts.context and opts.context.selected_tag or ''
+
+    require('telescope-orgmode.picker.search_tags').search_tags({
+      default_text = selected_tag,
+      context = opts.context,
+    })
+  end
+end
+
 function M.refile(closest_headline)
   return function(prompt_bufnr)
     local entry = action_state.get_selected_entry()
     actions.close(prompt_bufnr)
 
-    local destination = entry.value.headline
-      and org.get_api_headline(entry.filename, entry.value.headline.line_number)
+    local destination = entry.value.headline and org.get_api_headline(entry.filename, entry.value.headline.line_number)
       or org.get_api_file(entry.filename)
 
     if not destination then
