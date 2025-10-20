@@ -24,6 +24,45 @@ M.defaults = {
   tags_max_width = 15,
 }
 
+-- Picker-specific defaults
+M.picker_defaults = {
+  search_headings = {
+    mode = 'headlines',
+    prompt_titles = {
+      headlines = 'Search Headlines',
+      orgfiles = 'Search Org Files',
+    },
+  },
+  insert_link = {
+    mode = 'headlines',
+    prompt_titles = {
+      headlines = 'Insert Link to Headline',
+      orgfiles = 'Insert Link to File',
+    },
+  },
+  refile_heading = {
+    mode = 'headlines',
+    prompt_titles = {
+      headlines = 'Refile to Headline',
+      orgfiles = 'Refile to File',
+    },
+  },
+}
+
+---Create config for specific picker
+---@param picker_type string
+---@param opts table|nil
+---@return OrgmodePickerConfig
+function M:new(picker_type, opts)
+  return vim.tbl_extend('force', self.defaults, self.picker_defaults[picker_type] or {}, opts or {})
+end
+
+---Setup global defaults
+---@param ext_opts table
+function M.setup(ext_opts)
+  M.defaults = vim.tbl_extend('force', M.defaults, ext_opts or {})
+end
+
 ---Merge user options with defaults
 ---@param opts table|nil User-provided options
 ---@return OrgmodePickerConfig

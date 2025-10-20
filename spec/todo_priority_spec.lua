@@ -251,17 +251,17 @@ describe('[TODO and Priority Visualization]', function()
 
   describe('Configuration', function()
     it('should default to showing all columns', function()
-      local config = require('telescope-orgmode.config')
+      local config = require('telescope-orgmode.lib.config')
 
       -- Defaults should be true for all columns
-      assert.is_true(config.opts.show_location)
-      assert.is_true(config.opts.show_tags)
-      assert.is_true(config.opts.show_todo_state)
-      assert.is_true(config.opts.show_priority)
+      assert.is_true(config.defaults.show_location)
+      assert.is_true(config.defaults.show_tags)
+      assert.is_true(config.defaults.show_todo_state)
+      assert.is_true(config.defaults.show_priority)
     end)
 
     it('should respect user configuration overrides', function()
-      local config = require('telescope-orgmode.config')
+      local config = require('telescope-orgmode.lib.config')
 
       config.setup({
         show_location = false,
@@ -270,10 +270,10 @@ describe('[TODO and Priority Visualization]', function()
         show_priority = false,
       })
 
-      assert.is_false(config.opts.show_location)
-      assert.is_false(config.opts.show_tags)
-      assert.is_false(config.opts.show_todo_state)
-      assert.is_false(config.opts.show_priority)
+      assert.is_false(config.defaults.show_location)
+      assert.is_false(config.defaults.show_tags)
+      assert.is_false(config.defaults.show_todo_state)
+      assert.is_false(config.defaults.show_priority)
 
       -- Restore defaults
       config.setup({
