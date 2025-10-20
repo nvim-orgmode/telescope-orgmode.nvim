@@ -1,5 +1,11 @@
 local M = {}
 
+M.layout_config = {
+  width = 0.95,
+  height = 0.95,
+  preview_width = 0.4,
+}
+
 M.opts = {
   max_depth = nil,
   location_max_width = 15,
