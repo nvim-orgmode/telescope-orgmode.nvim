@@ -84,6 +84,7 @@ Headlines are sorted by most recently modified file by default. TODO states and
 priorities are displayed as columns and can be filtered in the search.
 
 **Keybindings:**
+
 - `<C-Space>`: Toggle between headline and org file search modes
 - `<C-f>`: Toggle between all headlines and current file only
 - `<C-t>`: Open tag picker for tag-based filtering
@@ -99,6 +100,7 @@ filename. This is particularly useful with
 searching roam nodes.
 
 **Keybindings:**
+
 - `<C-Space>`: Toggle back to headline search mode
 
 ### Search by tags
@@ -110,6 +112,7 @@ selected tag. Selecting a tag opens the headline search pre-filtered by
 that tag, allowing further refinement.
 
 **Keybindings:**
+
 - `<C-s>`: Toggle sort mode (frequency ↔ alphabetical)
 - `<C-t>`: Return to headline search (preserves tag filter)
 - `<CR>`: Select tag and open filtered headline search
@@ -155,6 +158,21 @@ require('telescope').setup({
             show_tags = false,
             show_todo_state = false,
             show_priority = false,
+        }
+    }
+})
+```
+
+### Column widths
+
+Maximum widths for location and tags columns:
+
+```lua
+require('telescope').setup({
+    extensions = {
+        orgmode = {
+            location_max_width = 15,
+            tags_max_width = 15,
         }
     }
 })

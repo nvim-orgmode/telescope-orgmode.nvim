@@ -55,7 +55,7 @@ M.get_entries = function(opts)
 end
 
 ---Entry-Maker for Telescope
----@param opts { location_width?: number, tags_width?: number, show_location?: boolean, show_tags?: boolean, show_todo_state?: boolean, show_priority?: boolean, widths?: { location: number, tags: number, todo: number, priority: number } }
+---@param opts { location_max_width?: number, tags_max_width?: number, show_location?: boolean, show_tags?: boolean, show_todo_state?: boolean, show_priority?: boolean, widths?: { location: number, tags: number, todo: number, priority: number } }
 ---@return fun(entry: OrgHeadlineEntry):MatchEntry
 M.make_entry = function(opts)
   local widths = opts.widths or { location = 0, tags = 0, todo = 0, priority = 0 }
@@ -64,11 +64,14 @@ M.make_entry = function(opts)
   local items = {}
 
   if opts.show_location and widths.location > 0 then
-    table.insert(items, { width = vim.F.if_nil(opts.location_width, widths.location) })
+    local location_width = opts.location_max_width and math.min(widths.location, opts.location_max_width)
+      or widths.location
+    table.insert(items, { width = location_width })
   end
 
   if opts.show_tags and widths.tags > 0 then
-    table.insert(items, { width = vim.F.if_nil(opts.tags_width, widths.tags) })
+    local tags_width = opts.tags_max_width and math.min(widths.tags, opts.tags_max_width) or widths.tags
+    table.insert(items, { width = tags_width })
   end
 
   if opts.show_todo_state and widths.todo > 0 then

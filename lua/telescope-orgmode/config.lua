@@ -2,6 +2,8 @@ local M = {}
 
 M.opts = {
   max_depth = nil,
+  location_max_width = 15,
+  tags_max_width = 15,
   show_location = true,
   show_tags = true,
   show_todo_state = true,
