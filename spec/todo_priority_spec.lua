@@ -17,7 +17,7 @@ describe('TODO and Priority Visualization', function()
       local file = load_file_sync({
         '* TODO [#A] High priority task',
         '* DONE [#B] Completed task',
-        '* WAITING Regular task',
+        '* PROGRESS Regular task',
         '* [#C] Note without TODO',
         '* Regular headline',
       })
@@ -43,9 +43,9 @@ describe('TODO and Priority Visualization', function()
       assert.are.same('DONE', headlines[2].todo_type)
       assert.are.same('B', headlines[2].priority)
 
-      -- Third headline: WAITING without priority
-      assert.are.same('WAITING', headlines[3].todo_value)
-      assert.is_not_nil(headlines[3].todo_type)
+      -- Third headline: PROGRESS without priority
+      assert.are.same('PROGRESS', headlines[3].todo_value)
+      assert.are.same('TODO', headlines[3].todo_type)
 
       -- Fourth headline: priority C without TODO
       assert.are.same('C', headlines[4].priority)
@@ -87,7 +87,7 @@ describe('TODO and Priority Visualization', function()
     it('should calculate max widths from result set', function()
       local file = load_file_sync({
         '* TODO Short',
-        '* WAITING LongerKeyword',
+        '* PROGRESS LongerKeyword',
         '* [#A] Priority A',
         '* [#B] Priority B',
       })
@@ -102,8 +102,8 @@ describe('TODO and Priority Visualization', function()
 
       local results, widths = headlines_entry_maker.get_entries({})
 
-      -- WAITING is 7 characters (longest TODO keyword in test)
-      assert.are.same(7, widths.todo)
+      -- PROGRESS is 8 characters (longest TODO keyword in test)
+      assert.are.same(8, widths.todo)
 
       -- [#A] and [#B] are both 4 characters
       assert.are.same(4, widths.priority)
