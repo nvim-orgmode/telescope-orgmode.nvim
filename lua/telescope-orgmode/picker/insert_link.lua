@@ -19,6 +19,7 @@ return function(opts)
       finder = finders.from_options(opts),
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
+      layout_config = config.layout_config,
       attach_mappings = function(_, map)
         action_set.select:replace(actions.insert(opts))
         mappings.attach_mappings(map, opts)

@@ -92,6 +92,7 @@ function M.search_tags(opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = create_tag_previewer(opts),
+      layout_config = require('telescope-orgmode.config').layout_config,
       attach_mappings = function(prompt_bufnr, map)
         local toggle_sort = function()
           local current_picker = action_state.get_current_picker(prompt_bufnr)
