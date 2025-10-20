@@ -1,7 +1,9 @@
 local OrgFile = require('orgmode.files.file')
 local org = require('telescope-orgmode.org')
 
-describe('Telescope Orgmode Integration', function()
+-- Use [Section Name] format in describe() for grouped test output
+-- See scripts/test-formatter.sh for formatting behavior
+describe('[Telescope Orgmode Integration]', function()
   ---@return OrgFile
   local load_file_sync = function(content, filename)
     content = content or {}

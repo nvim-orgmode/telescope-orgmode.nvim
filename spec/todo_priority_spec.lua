@@ -3,7 +3,9 @@ local org = require('telescope-orgmode.org')
 local highlights = require('telescope-orgmode.highlights')
 local headlines_entry_maker = require('telescope-orgmode.entry_maker.headlines')
 
-describe('TODO and Priority Visualization', function()
+-- Use [Section Name] format in describe() for grouped test output
+-- See scripts/test-formatter.sh for formatting behavior
+describe('[TODO and Priority Visualization]', function()
   ---@return OrgFile
   local load_file_sync = function(content, filename)
     content = content or {}
