@@ -1,6 +1,6 @@
 local config = require('telescope-orgmode.lib.config')
 
-describe('config', function()
+describe('[Unit: lib/config]', function()
   describe('defaults', function()
     it('has expected default values', function()
       assert.is_nil(config.defaults.max_depth)

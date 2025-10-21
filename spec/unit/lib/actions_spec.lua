@@ -1,7 +1,7 @@
 local actions = require('telescope-orgmode.lib.actions')
 
-describe('lib.actions', function()
-  describe('entry_to_destination', function()
+describe('[Unit: lib/actions]', function()
+  describe('entry normalization', function()
     -- Note: These tests verify the library handles different entry formats
     -- Full integration testing with orgmode is done in integration tests
 
@@ -16,7 +16,7 @@ describe('lib.actions', function()
     end)
   end)
 
-  describe('execute_refile', function()
+  describe('refile workflow', function()
     it('returns failure when destination not found', function()
       local source = { title = 'Source' }
       local invalid_entry = {}
@@ -30,12 +30,12 @@ describe('lib.actions', function()
     end)
   end)
 
-  describe('execute_insert_link', function()
+  describe('link insertion workflow', function()
     -- Note: Full integration testing with orgmode is done in integration tests
     -- Unit testing insert_link is challenging without mocking due to orgmode API dependencies
   end)
 
-  describe('execute_navigate', function()
+  describe('navigation workflow', function()
     it('returns false for invalid entry', function()
       local invalid_entry = {}
 
