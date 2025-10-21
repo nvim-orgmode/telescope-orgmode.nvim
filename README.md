@@ -16,25 +16,50 @@ Refile heading from capture or current file under destination with `:Telescope o
 
 ## Installation
 
-### With lazyvim
+### With LazyVim (Telescope)
 
 ```lua
-  {
-    "nvim-orgmode/telescope-orgmode.nvim",
-    event = "VeryLazy",
-    dependencies = {
-      "nvim-orgmode/orgmode",
-      "nvim-telescope/telescope.nvim",
-    },
-    config = function()
-      require("telescope").load_extension("orgmode")
+{
+  "nvim-orgmode/telescope-orgmode.nvim",
+  event = "VeryLazy",
+  dependencies = {
+    "nvim-orgmode/orgmode",
+    "nvim-telescope/telescope.nvim",
+  },
+  config = function()
+    require("telescope").load_extension("orgmode")
 
-      vim.keymap.set("n", "<leader>r", require("telescope").extensions.orgmode.refile_heading)
-      vim.keymap.set("n", "<leader>fh", require("telescope").extensions.orgmode.search_headings)
-      vim.keymap.set("n", "<leader>li", require("telescope").extensions.orgmode.insert_link)
-      vim.keymap.set("n", "<leader>ot", require("telescope").extensions.orgmode.search_tags)
-    end,
-  }
+    vim.keymap.set("n", "<leader>r", require("telescope").extensions.orgmode.refile_heading)
+    vim.keymap.set("n", "<leader>fh", require("telescope").extensions.orgmode.search_headings)
+    vim.keymap.set("n", "<leader>li", require("telescope").extensions.orgmode.insert_link)
+    vim.keymap.set("n", "<leader>ot", require("telescope").extensions.orgmode.search_tags)
+  end,
+}
+```
+
+### With LazyVim (Snacks.picker)
+
+```lua
+{
+  "nvim-orgmode/telescope-orgmode.nvim",
+  event = "VeryLazy",
+  dependencies = {
+    "nvim-orgmode/orgmode",
+    "folke/snacks.nvim",
+  },
+  config = function()
+    -- Setup with Snacks adapter
+    require('telescope-orgmode').setup({ adapter = 'snacks' })
+
+    -- Keymaps using direct module API
+    vim.keymap.set("n", "<leader>r", require('telescope-orgmode').refile_heading)
+    vim.keymap.set("n", "<leader>fh", require('telescope-orgmode').search_headings)
+    vim.keymap.set("n", "<leader>li", require('telescope-orgmode').insert_link)
+
+    -- Note: search_tags requires Telescope, even with Snacks adapter
+    -- vim.keymap.set("n", "<leader>ot", require('telescope-orgmode').search_tags)
+  end,
+}
 ```
 
 ### Without lazyvim
@@ -120,6 +145,56 @@ that tag, allowing further refinement.
 The initial sort mode can be [configured](#tag-search-options).
 
 ## Configuration
+
+### Picker Framework Selection
+
+telescope-orgmode.nvim supports multiple picker frameworks through an adapter system.
+By default, it uses `telescope.nvim`, but you can also use `snacks.nvim` picker or other
+compatible frameworks.
+
+**Using Telescope (default)**:
+```lua
+-- Load as Telescope extension
+require('telescope').load_extension('orgmode')
+
+-- Use via Telescope extension API
+vim.keymap.set('n', '<leader>fh', require('telescope').extensions.orgmode.search_headings)
+vim.keymap.set('n', '<leader>r', require('telescope').extensions.orgmode.refile_heading)
+vim.keymap.set('n', '<leader>li', require('telescope').extensions.orgmode.insert_link)
+```
+
+**Using Snacks.picker**:
+```lua
+-- Setup with Snacks adapter
+require('telescope-orgmode').setup({ adapter = 'snacks' })
+
+-- Use via direct module API
+vim.keymap.set('n', '<leader>fh', require('telescope-orgmode').search_headings)
+vim.keymap.set('n', '<leader>r', require('telescope-orgmode').refile_heading)
+vim.keymap.set('n', '<leader>li', require('telescope-orgmode').insert_link)
+
+-- Note: search_tags is not yet adapter-aware, requires Telescope
+```
+
+**Important Notes**:
+- When using Snacks adapter, use the direct module API (`require('telescope-orgmode')`), not the Telescope extension API
+- `search_tags` is currently **Telescope-only** and has not been refactored to support multiple frameworks
+
+**Adapter System Coverage**:
+- ✅ `search_headings` - Supports both Telescope and Snacks
+- ✅ `refile_heading` - Supports both Telescope and Snacks
+- ✅ `insert_link` - Supports both Telescope and Snacks
+- ❌ `search_tags` - Telescope only (not yet refactored)
+
+**Benefits of the adapter system**:
+- Same API regardless of picker framework
+- All features work identically (toggle modes, filters, refile, etc.)
+- Choose based on your preference or existing setup
+- Framework-agnostic business logic ensures consistent behavior
+
+**Available keybindings** (work in both frameworks):
+- `<C-Space>`: Toggle between headline and org file search modes
+- `<C-f>`: Toggle between all headlines and current file only (headlines mode)
 
 ### Maximum headline level
 
