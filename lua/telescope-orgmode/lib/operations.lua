@@ -3,23 +3,33 @@ local org = require('telescope-orgmode.org')
 local M = {}
 
 ---Refile source headline to destination
+---Uses internal API (._section) for file context switching, following orgmode agenda pattern
+---This is necessary because OrgApiHeadline.file (public wrapper) lacks update() method
 ---@param source_headline table OrgApiHeadline
 ---@param destination table OrgApiHeadline or OrgApiFile
 ---@return boolean|nil success (nil on error)
 function M.refile(source_headline, destination)
-  -- Trust source_headline from caller (validated at picker creation)
-  -- Orgmode's refile API validates structure and returns errors
-  local success, promise = pcall(org.refile, {
-    source = source_headline,
-    destination = destination,
-  })
-
-  if not success then
+  if not source_headline or not source_headline._section or not source_headline._section.file then
     return nil
   end
 
+  -- Extract internal headline object (OrgHeadline, not OrgApiHeadline wrapper)
+  -- RATIONALE: Using internal API because public API doesn't support file context switching
+  -- TODO: Propose upstream API extension (see claudedocs/bugs/orgmode-api-gap-file-context-switching.md)
+  local internal_headline = source_headline._section
+
+  -- Use internal object's file:update() method for context switching
+  local update = internal_headline.file:update(function()
+    -- Internal headline's :get_range() works correctly in callback context
+    vim.fn.cursor({ internal_headline:get_range().start_line, 1 })
+    return org.refile({
+      source = source_headline, -- orgmode.refile() expects API wrapper
+      destination = destination,
+    })
+  end)
+
   local wait_success, result = pcall(function()
-    return promise:wait()
+    return update:wait()
   end)
 
   return wait_success and result or nil
