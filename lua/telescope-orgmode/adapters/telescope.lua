@@ -277,15 +277,30 @@ function M.insert_link(user_opts)
   -- Insert link action
   local function insert_action(prompt_bufnr)
     local entry = action_state.get_selected_entry()
+    local entry_value = entry.value
 
-    -- Use lib_actions for insert link workflow
-    local success, message = lib_actions.execute_insert_link(entry.value)
+    -- Close picker FIRST, then execute insert_link after focus returns to original buffer
+    actions.close(prompt_bufnr)
+    vim.schedule(function()
+      local promise = lib_actions.execute_insert_link(entry_value)
+      if not promise then
+        vim.notify('Could not find link target', vim.log.levels.ERROR)
+        return
+      end
 
-    vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.ERROR)
-
-    if success then
-      actions.close(prompt_bufnr)
-    end
+      -- Handle async result
+      promise
+        :next(function(result)
+          if result then
+            vim.notify('Link inserted successfully', vim.log.levels.INFO)
+          else
+            vim.notify('Link insertion cancelled', vim.log.levels.INFO)
+          end
+        end)
+        :catch(function(err)
+          vim.notify('Failed to insert link: ' .. tostring(err), vim.log.levels.ERROR)
+        end)
+    end)
   end
 
   -- Create and launch picker

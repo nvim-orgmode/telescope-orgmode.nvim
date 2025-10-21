@@ -53,25 +53,14 @@ describe('[Unit: lib/operations]', function()
   end)
 
   describe('insert_link', function()
-    it('returns nil when headline not found', function()
-      local entry = {
-        filename = '/nonexistent/file.org',
-        value = {
-          headline = {
-            line_number = 999,
-          },
-        },
-      }
-      local result = operations.insert_link(entry, {})
+    it('returns nil when destination is nil', function()
+      local result = operations.insert_link(nil)
       assert.is_nil(result)
     end)
 
-    it('returns nil when file not found', function()
-      local entry = {
-        filename = '/nonexistent/file.org',
-        value = {},
-      }
-      local result = operations.insert_link(entry, {})
+    it('returns nil when destination has no get_link method', function()
+      local invalid_destination = { filename = '/some/file.org' }
+      local result = operations.insert_link(invalid_destination)
       assert.is_nil(result)
     end)
   end)

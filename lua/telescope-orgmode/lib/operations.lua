@@ -35,34 +35,16 @@ function M.refile(source_headline, destination)
   return wait_success and result or nil
 end
 
----Insert link to selected entry
----@param entry table { filename: string, value: { headline?: table } }
----@param opts table { original_file?: string }
----@return boolean|nil success
-function M.insert_link(entry, opts)
-  local destination
-  if entry.value and entry.value.headline then
-    -- Link to headline
-    local success, api_headline = pcall(org.get_api_headline, entry.filename, entry.value.headline.line_number)
-    if not success or not api_headline then
-      return nil
-    end
-    destination = api_headline
-  else
-    -- Link to file
-    local success, api_file = pcall(org.get_api_file, entry.filename)
-    if not success or not api_file then
-      return nil
-    end
-    destination = api_file
+---Insert link to destination (async, returns promise)
+---@param destination table OrgApiHeadline or OrgApiFile
+---@return table|nil promise OrgPromise, or nil if destination invalid
+function M.insert_link(destination)
+  if not destination or not destination.get_link then
+    return nil
   end
 
-  local promise = org.insert_link(destination)
-  local success, result = pcall(function()
-    return promise:wait()
-  end)
-
-  return success and result or nil
+  local link_location = destination:get_link()
+  return org.insert_link(link_location)
 end
 
 ---Navigate to entry (handles both simple format and OrgApiHeadline/OrgApiFile)
