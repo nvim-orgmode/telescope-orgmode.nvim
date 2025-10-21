@@ -12,6 +12,7 @@ local org = require('telescope-orgmode.org')
 local headlines_entry = require('telescope-orgmode.entry_maker.headlines')
 local orgfiles_entry = require('telescope-orgmode.entry_maker.orgfiles')
 local lib_actions = require('telescope-orgmode.lib.actions')
+local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
@@ -59,11 +60,20 @@ end
 ---@return function telescope action
 local function toggle_mode_action(state, opts)
   return function(prompt_bufnr)
-    state:toggle()
-    local new_mode = state:get_current()
-    local new_finder = create_finder(state, opts)
-    local new_title = opts.prompt_titles[new_mode]
-    update_picker(prompt_bufnr, new_finder, new_title)
+    -- Refresh function for keybindings library
+    local function refresh(updated_state)
+      local new_mode = updated_state:get_current()
+      local new_finder = create_finder(updated_state, opts)
+      local new_title = opts.prompt_titles[new_mode]
+      update_picker(prompt_bufnr, new_finder, new_title)
+    end
+
+    -- Execute action using keybindings library
+    keybindings.execute_action('toggle_mode', {
+      state = state,
+      opts = opts,
+      refresh_fn = refresh,
+    })
   end
 end
 
@@ -73,19 +83,19 @@ end
 ---@return function telescope action
 local function toggle_current_file_action(state, opts)
   return function(prompt_bufnr)
-    -- Only works in headlines mode
-    if state:get_current() ~= 'headlines' then
-      return
+    -- Refresh function for keybindings library
+    local function refresh(updated_state)
+      local new_finder = create_finder(updated_state, opts)
+      local title = opts.prompt_titles.headlines
+      update_picker(prompt_bufnr, new_finder, title)
     end
 
-    -- Toggle the filter
-    local current = state:get_filter('only_current_file')
-    state:set_filter('only_current_file', not current)
-
-    -- Refresh with new filter
-    local new_finder = create_finder(state, opts)
-    local title = opts.prompt_titles.headlines
-    update_picker(prompt_bufnr, new_finder, title)
+    -- Execute action using keybindings library
+    keybindings.execute_action('toggle_current_file', {
+      state = state,
+      opts = opts,
+      refresh_fn = refresh,
+    })
   end
 end
 
@@ -94,14 +104,15 @@ end
 ---@return function telescope action
 local function open_tag_picker_action(opts)
   return function(prompt_bufnr)
-    actions.close(prompt_bufnr)
+    -- Close function for keybindings library
+    local function close_fn()
+      actions.close(prompt_bufnr)
+    end
 
-    -- Pre-fill search with previously selected tag
-    local selected_tag = opts.context and opts.context.selected_tag or ''
-
-    require('telescope-orgmode.picker.search_tags').search_tags({
-      default_text = selected_tag,
-      context = opts.context,
+    -- Execute action using keybindings library
+    keybindings.execute_action('open_tag_picker', {
+      opts = opts,
+      close_fn = close_fn,
     })
   end
 end
