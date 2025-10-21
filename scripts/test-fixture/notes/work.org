@@ -1,0 +1,32 @@
+#+title: Work Tasks
+#+category: work
+
+* TODO Write quarterly report                                      :work:urgent:
+  DEADLINE: <2026-03-15>
+  Needs data from all departments.
+
+** TODO Collect sales data                                             :data:
+** DONE Collect engineering data                                       :data:
+
+* DONE [#A] Fix critical production bug                            :work:critical:
+  CLOSED: [2026-02-28]
+  Hotfix deployed.
+
+* WAITING [#B] Review design proposal                              :work:review:
+  Waiting for design team feedback.
+
+* NEXT [#A] Prepare sprint planning                                :work:planning:
+  Sprint starts Monday.
+
+* TODO [#C] Update documentation                                   :work:docs:
+  Low priority cleanup.
+
+* IN-PROGRESS Refactor authentication module                       :work:tech:
+  Halfway through the OAuth2 migration.
+
+** TODO Migrate token storage
+** DONE Update login flow
+** TODO Add refresh token handling
+
+* TODO [#B] Onboard new team member                                :work:hr:
+  Starts next week.

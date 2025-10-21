@@ -1,0 +1,16 @@
+#+title: Projects
+#+category: projects
+
+* TODO [#A] telescope-orgmode v2.0 Release                         :dev:milestone:
+  Major features complete, needs polish.
+
+** DONE Multi-adapter support
+** DONE Snacks.nvim integration
+** TODO Filter keybindings
+** TODO Highlight consolidation
+
+* NEXT [#B] Contribute to orgmode.nvim                             :dev:oss:
+  Fix agenda view performance issue.
+
+* WAITING Neovim plugin workshop                                   :dev:community:
+  Conference date TBD.

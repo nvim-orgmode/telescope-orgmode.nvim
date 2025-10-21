@@ -1,0 +1,24 @@
+#+title: Personal Notes
+#+category: personal
+
+* TODO [#A] Book dentist appointment                               :personal:health:
+  Overdue since January.
+
+* DONE Grocery shopping                                            :personal:errands:
+  CLOSED: [2026-02-27]
+
+* TODO [#B] Read "Designing Data-Intensive Applications"           :personal:learning:
+  Chapter 5 done, 7 remaining.
+
+* NEXT Plan weekend trip                                           :personal:travel:
+  Check train schedules.
+
+* WAITING [#C] Receive package from Amazon                         :personal:errands:
+  Tracking says delivery Thursday.
+
+* TODO Organize photo library                                      :personal:digital:
+  About 3000 unsorted photos.
+
+** TODO Sort 2025 photos
+** TODO Back up to NAS
+** DONE Delete duplicates

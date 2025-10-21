@@ -25,9 +25,20 @@ spec/
 │   ├── configuration/                # Cross-cutting configuration concerns
 │   │   └── precedence_spec.lua       [Config: Precedence & Validation]
 │   │
-│   └── adapters/                     # Adapter E2E smoke tests
-│       ├── telescope_spec.lua        [E2E: Telescope]
-│       └── snacks_spec.lua           [E2E: Snacks]
+│   └── adapters/                     # Adapter integration smoke tests
+│       ├── telescope_spec.lua        [Integration: Telescope]
+│       └── snacks_spec.lua           [Integration: Snacks]
+│
+├── e2e/
+│   ├── lib/                          # E2E tests for lib/ modules
+│   │   └── actions_spec.lua          [E2E: Action Execution]
+│   │
+│   └── adapters/                     # E2E tests for adapters
+│       ├── telescope_spec.lua        [E2E: Telescope Adapter]
+│       └── snacks_spec.lua           [E2E: Snacks Adapter]
+│
+├── helpers/
+│   └── e2e_helpers.lua               # E2E test utilities
 │
 └── minimal_init.lua                  # Test setup and initialization
 ```
@@ -164,31 +175,86 @@ describe('[Config: Precedence & Validation]', function()
 end)
 ```
 
-### Adapter E2E Tests (`integration/adapters/`)
+### Adapter Integration Tests (`integration/adapters/`)
 
-**Purpose**: Full stack end-to-end smoke tests from org fixtures through adapter UI.
+**Purpose**: Integration smoke tests for adapter module loading and basic initialization.
 
 **Characteristics**:
-- Minimal happy path tests only
+- Minimal smoke tests for module loading
+- Tests basic adapter initialization without crashes
 - Tests complete workflow: org files → data → entry maker → adapter
-- Tests adapter-specific features and configuration
-
-**Configuration aspects tested**:
-- Telescope: `layout_strategy`, `sorting_strategy`, telescope-specific opts
-- Snacks: `preview_position`, `border`, snacks-specific opts
 
 **Example**:
 ```lua
-describe('[E2E: Telescope]', function()
-  describe('search headings', function()
-    it('creates picker with headlines from org files')
+describe('[Integration: Telescope]', function()
+  describe('module loading', function()
+    it('loads Telescope adapter without errors')
   end)
 
-  describe('telescope-specific configuration', function()
-    it('respects layout_strategy option')
+  describe('basic initialization', function()
+    it('creates Telescope picker without crash')
   end)
 end)
 ```
+
+### E2E Tests (`e2e/`)
+
+**Purpose**: Programmatic end-to-end tests validating real API usage and integration.
+
+**Why E2E Tests?**:
+- Catch adapter-specific bugs that unit tests miss (proven by Snacks preview performance issue)
+- Validate hexagonal architecture with real picker APIs
+- Test real orgmode API usage
+- Ensure actions execute without crashes
+
+**Approach: Programmatic (Not Feedkeys)**
+
+Traditional feedkeys-based E2E tests don't work in headless mode (Neovim architectural limitation). Instead, we use programmatic API calls with real objects.
+
+**Pattern**:
+```lua
+-- Open picker
+telescope_orgmode.search_headings({ adapter = 'telescope' })
+
+-- Test doesn't crash
+local ok = pcall(some_operation)
+assert.is_true(ok, 'Operation should not crash')
+
+-- Clean up
+pcall(function()
+  local picker = get_current_picker()
+  if picker then close_picker(picker) end
+end)
+```
+
+**Test Categories**:
+- **Action Execution** (`e2e/lib/`): Test lib/actions.lua with real state and entries
+- **Adapter E2E** (`e2e/adapters/`): Test adapter integration with real picker APIs
+
+**Coverage**:
+- Unit tests: 60% (business logic, state, filters)
+- Integration tests: +15% (data loading, entry makers)
+- E2E tests: +12% (adapter integration, real API usage)
+- Manual testing: +10% (visual, UX, keybinding feel)
+- **Total**: ~97% coverage
+
+**Example**:
+```lua
+describe('[E2E: Telescope Adapter]', function()
+  it('should create search_headings picker without crashing', function()
+    local ok = pcall(telescope_orgmode.search_headings, { adapter = 'telescope' })
+    assert.is_true(ok, 'search_headings should not crash')
+
+    -- Clean up
+    pcall(function()
+      local picker = e2e_helpers.get_current_picker_telescope()
+      if picker then e2e_helpers.close_picker_telescope(picker) end
+    end)
+  end)
+end)
+```
+
+**Spike Findings**: See `spike-final-2025-10-23` memory and `claudedocs/analysis/feedkeys-blocking-picker-limitation-2025-10-23.md` for empirical evidence supporting programmatic approach.
 
 ## Naming Convention
 

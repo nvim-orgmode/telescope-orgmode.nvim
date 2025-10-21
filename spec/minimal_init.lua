@@ -72,6 +72,10 @@ local plugins = {
     branch = telescope_branch,
   },
   {
+    name = 'snacks.nvim',
+    repo = 'https://github.com/folke/snacks.nvim',
+  },
+  {
     name = 'orgmode',
     repo = 'https://github.com/nvim-orgmode/orgmode',
     branch = orgmode_branch,

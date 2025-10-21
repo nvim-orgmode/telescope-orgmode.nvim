@@ -26,6 +26,9 @@ manual-test-telescope: ## Run self-guided manual test (Telescope adapter)
 manual-test-snacks: ## Run self-guided manual test (Snacks adapter)
 	@./scripts/manual_test.sh snacks
 
+e2e: ## Launch interactive test fixture (isolated, both adapters)
+	@cd scripts/test-fixture && nvim --clean -u init.lua notes/work.org
+
 format: ## Format Lua code with stylua
 	@stylua lua/ spec/
 
