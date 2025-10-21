@@ -6,6 +6,7 @@ local headlines_entry = require('telescope-orgmode.entry_maker.headlines')
 local orgfiles_entry = require('telescope-orgmode.entry_maker.orgfiles')
 local lib_actions = require('telescope-orgmode.lib.actions')
 local highlights = require('telescope-orgmode.lib.highlights')
+local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
@@ -163,14 +164,20 @@ function toggle_mode(state, picker_type, base_opts, picker)
   -- Capture current query
   local current_query = picker.input.filter.pattern
 
-  -- Toggle state
-  state:toggle()
+  -- Refresh function for keybindings library
+  local function refresh(updated_state)
+    -- Close current picker
+    picker:close()
+    -- Open new picker with preserved query
+    create_picker(updated_state, picker_type, base_opts, current_query)
+  end
 
-  -- Close current picker
-  picker:close()
-
-  -- Open new picker with preserved query
-  create_picker(state, picker_type, base_opts, current_query)
+  -- Execute action using keybindings library
+  keybindings.execute_action('toggle_mode', {
+    state = state,
+    opts = base_opts,
+    refresh_fn = refresh,
+  })
 end
 
 ---Toggle current file filter (headlines mode only)
@@ -179,23 +186,23 @@ end
 ---@param base_opts table
 ---@param picker table Current Snacks picker
 function toggle_current_file(state, picker_type, base_opts, picker)
-  -- Only works in headlines mode
-  if state:get_current() ~= 'headlines' then
-    return
-  end
-
   -- Capture current query
   local current_query = picker.input.filter.pattern
 
-  -- Toggle the filter
-  local current = state:get_filter('only_current_file')
-  state:set_filter('only_current_file', not current)
+  -- Refresh function for keybindings library
+  local function refresh(updated_state)
+    -- Close current picker
+    picker:close()
+    -- Open new picker with preserved query and filter
+    create_picker(updated_state, picker_type, base_opts, current_query)
+  end
 
-  -- Close current picker
-  picker:close()
-
-  -- Open new picker with preserved query and filter
-  create_picker(state, picker_type, base_opts, current_query)
+  -- Execute action using keybindings library
+  keybindings.execute_action('toggle_current_file', {
+    state = state,
+    opts = base_opts,
+    refresh_fn = refresh,
+  })
 end
 
 ---Navigate to selected item
