@@ -117,12 +117,14 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
             function(picker)
               toggle_mode(state, picker_type, base_opts, picker)
             end,
+            mode = { 'i', 'n' },
             desc = 'Toggle between headlines and org files',
           },
           ['<C-f>'] = {
             function(picker)
               toggle_current_file(state, picker_type, base_opts, picker)
             end,
+            mode = { 'i', 'n' },
             desc = 'Toggle current file filter',
           },
         },
@@ -161,8 +163,11 @@ end
 ---@param base_opts table
 ---@param picker table Current Snacks picker
 function toggle_mode(state, picker_type, base_opts, picker)
-  -- Capture current query
-  local current_query = picker.input.filter.pattern
+  -- Capture current query (safely handle picker.input)
+  local current_query = ''
+  if picker.input and picker.input.filter then
+    current_query = picker.input.filter.pattern or ''
+  end
 
   -- Refresh function for keybindings library
   local function refresh(updated_state)
@@ -186,8 +191,11 @@ end
 ---@param base_opts table
 ---@param picker table Current Snacks picker
 function toggle_current_file(state, picker_type, base_opts, picker)
-  -- Capture current query
-  local current_query = picker.input.filter.pattern
+  -- Capture current query (safely handle picker.input)
+  local current_query = ''
+  if picker.input and picker.input.filter then
+    current_query = picker.input.filter.pattern or ''
+  end
 
   -- Refresh function for keybindings library
   local function refresh(updated_state)
