@@ -1,6 +1,6 @@
 local operations = require('telescope-orgmode.lib.operations')
 
-describe('operations', function()
+describe('[Unit: lib/operations]', function()
   describe('get_current_headline', function()
     it('returns nil or table', function()
       local result = operations.get_current_headline()

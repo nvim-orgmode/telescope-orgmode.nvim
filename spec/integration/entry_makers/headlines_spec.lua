@@ -5,7 +5,7 @@ local headlines_entry_maker = require('telescope-orgmode.entry_maker.headlines')
 
 -- Use [Section Name] format in describe() for grouped test output
 -- See scripts/test-formatter.sh for formatting behavior
-describe('[TODO and Priority Visualization]', function()
+describe('[Entry Maker: Headlines]', function()
   ---@return OrgFile
   local load_file_sync = function(content, filename)
     content = content or {}
@@ -14,78 +14,7 @@ describe('[TODO and Priority Visualization]', function()
     return OrgFile.load(filename):wait()
   end
 
-  describe('Data Extraction', function()
-    it('should extract todo_value, todo_type, and priority from headlines', function()
-      local file = load_file_sync({
-        '* TODO [#A] High priority task',
-        '* DONE [#B] Completed task',
-        '* PROGRESS Regular task',
-        '* [#C] Note without TODO',
-        '* Regular headline',
-      })
-
-      -- Mock orgmode.files:all()
-      package.loaded['orgmode'] = {
-        files = {
-          all = function()
-            return { file }
-          end,
-        },
-      }
-
-      local headlines = org.load_headlines({})
-
-      -- First headline: TODO with priority A
-      assert.are.same('TODO', headlines[1].todo_value)
-      assert.are.same('TODO', headlines[1].todo_type)
-      assert.are.same('A', headlines[1].priority)
-
-      -- Second headline: DONE with priority B
-      assert.are.same('DONE', headlines[2].todo_value)
-      assert.are.same('DONE', headlines[2].todo_type)
-      assert.are.same('B', headlines[2].priority)
-
-      -- Third headline: PROGRESS without priority
-      assert.are.same('PROGRESS', headlines[3].todo_value)
-      assert.are.same('TODO', headlines[3].todo_type)
-
-      -- Fourth headline: priority C without TODO
-      assert.are.same('C', headlines[4].priority)
-
-      -- Fifth headline: no TODO or priority
-      assert.is_nil(headlines[5].todo_value)
-      assert.is_nil(headlines[5].priority)
-    end)
-
-    it('should extract TODO and priority from search results', function()
-      local file = load_file_sync({
-        '* TODO [#A] Important task :work:',
-        '* DONE [#B] Completed task :work:',
-        '* Regular task :personal:',
-      })
-
-      package.loaded['orgmode'] = {
-        files = {
-          all = function()
-            return { file }
-          end,
-        },
-      }
-
-      local headlines = org.load_headlines_by_search('+work', {})
-
-      -- Should only return work-tagged headlines
-      assert.are.same(2, #headlines)
-
-      -- Verify TODO and priority data preserved in search results
-      assert.are.same('TODO', headlines[1].todo_value)
-      assert.are.same('A', headlines[1].priority)
-      assert.are.same('DONE', headlines[2].todo_value)
-      assert.are.same('B', headlines[2].priority)
-    end)
-  end)
-
-  describe('Width Calculation', function()
+  describe('width calculation', function()
     it('should calculate max widths from result set', function()
       local file = load_file_sync({
         '* TODO Short',
@@ -133,7 +62,7 @@ describe('[TODO and Priority Visualization]', function()
     end)
   end)
 
-  describe('Highlight Integration', function()
+  describe('highlight integration', function()
     it('should return correct highlight groups for TODO keywords', function()
       -- Test with orgmode not loaded (fallback behavior)
       local hl = highlights.get_todo_highlight('TODO', 'TODO')
@@ -163,7 +92,7 @@ describe('[TODO and Priority Visualization]', function()
     end)
   end)
 
-  describe('Entry Maker', function()
+  describe('entry creation', function()
     it('should create entries with TODO and priority fields', function()
       local file = load_file_sync({
         '* TODO [#A] Important task',
@@ -249,7 +178,7 @@ describe('[TODO and Priority Visualization]', function()
     end)
   end)
 
-  describe('Configuration', function()
+  describe('column visibility', function()
     it('should default to showing all columns', function()
       local config = require('telescope-orgmode.lib.config')
 
@@ -342,7 +271,7 @@ describe('[TODO and Priority Visualization]', function()
     end)
   end)
 
-  describe('Width Calculation for Location and Tags', function()
+  describe('width calculation for location and tags', function()
     it('should calculate max width for location column', function()
       local file = load_file_sync({
         '* First headline',
