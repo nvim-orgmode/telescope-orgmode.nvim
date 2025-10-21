@@ -11,6 +11,7 @@ local config = require('telescope-orgmode.lib.config')
 local org = require('telescope-orgmode.org')
 local headlines_entry = require('telescope-orgmode.entry_maker.headlines')
 local orgfiles_entry = require('telescope-orgmode.entry_maker.orgfiles')
+local lib_actions = require('telescope-orgmode.lib.actions')
 
 local M = {}
 
@@ -210,30 +211,15 @@ function M.refile_heading(user_opts)
   -- Refile action
   local function refile_action(prompt_bufnr)
     local entry = action_state.get_selected_entry()
-    actions.close(prompt_bufnr)
 
-    -- Get destination as API object
-    local destination
-    if entry.value.headline then
-      destination = org.get_api_headline(entry.filename, entry.value.headline.line_number)
-    else
-      destination = org.get_api_file(entry.filename)
+    -- Use lib_actions for refile workflow
+    local success, message = lib_actions.execute_refile(source_headline, entry.value)
+
+    vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.WARN)
+
+    if success then
+      actions.close(prompt_bufnr)
     end
-
-    if not destination then
-      vim.notify('Could not find destination headline or file', vim.log.levels.ERROR)
-      return
-    end
-
-    -- Perform refile using operations module
-    local success = operations.refile(source_headline, destination)
-
-    if not success then
-      vim.notify('Refile failed - source may have been deleted or changed', vim.log.levels.WARN)
-      return
-    end
-
-    vim.notify('Refiled successfully', vim.log.levels.INFO)
   end
 
   -- Create and launch picker
@@ -280,17 +266,14 @@ function M.insert_link(user_opts)
   -- Insert link action
   local function insert_action(prompt_bufnr)
     local entry = action_state.get_selected_entry()
-    actions.close(prompt_bufnr)
 
-    -- Get link destination
-    local destination = org.get_link_destination(entry, opts)
+    -- Use lib_actions for insert link workflow
+    local success, message = lib_actions.execute_insert_link(entry.value)
 
-    -- Insert link using operations module
-    local success = operations.insert_link(destination)
+    vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.ERROR)
 
-    if not success then
-      vim.notify('Failed to insert link', vim.log.levels.ERROR)
-      return
+    if success then
+      actions.close(prompt_bufnr)
     end
   end
 

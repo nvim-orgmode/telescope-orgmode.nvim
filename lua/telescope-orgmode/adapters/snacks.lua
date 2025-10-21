@@ -4,118 +4,18 @@ local config = require('telescope-orgmode.lib.config')
 local org = require('telescope-orgmode.org')
 local headlines_entry = require('telescope-orgmode.entry_maker.headlines')
 local orgfiles_entry = require('telescope-orgmode.entry_maker.orgfiles')
+local lib_actions = require('telescope-orgmode.lib.actions')
+local highlights = require('telescope-orgmode.lib.highlights')
 
 local M = {}
-
----Get highlight group for TODO state
----@param todo_type string|nil
----@return string|nil
-local function get_todo_highlight(todo_type)
-  if todo_type == 'TODO' then
-    return '@org.keyword.todo'
-  elseif todo_type == 'DONE' then
-    return '@org.keyword.done'
-  end
-  return nil
-end
-
----Get highlight group for headline depth
----@param level number Headline level (1-9)
----@return string Highlight group
-local function get_level_highlight(level)
-  -- Cycle through org headline levels
-  local level_mod = ((level - 1) % 8) + 1
-  return '@org.headline.level' .. level_mod
-end
-
----Pad or truncate string to exact width
----@param str string
----@param width number
----@return string
-local function pad(str, width)
-  local len = vim.fn.strdisplaywidth(str)
-  if len > width then
-    -- Truncate and add ellipsis
-    return vim.fn.strcharpart(str, 0, width - 1) .. '…'
-  elseif len < width then
-    -- Pad with spaces
-    return str .. string.rep(' ', width - len)
-  end
-  return str
-end
 
 ---Format headline entry for display with highlights and column padding
 ---@param entry table Raw entry with headline data
 ---@param opts table Display options with widths
 ---@return table[] segments, string text Array of {text, highlight} segments and plain text for searching
 local function format_headline_display(entry, opts)
-  local headline = entry.headline
-  local segments = {}
-  local text_parts = {}
-  local widths = opts.widths or {}
-
-  -- Location (filename:line) - dimmed, padded
-  if opts.show_location then
-    if widths.location and widths.location > 0 then
-      local location = string.format('%s:%i', vim.fn.fnamemodify(entry.filename, ':t'), headline.line_number)
-      local max_width = opts.location_max_width and math.min(widths.location, opts.location_max_width)
-        or widths.location
-      table.insert(segments, { pad(location, max_width) .. '  ', 'Comment' })
-      table.insert(text_parts, location)
-    end
-  end
-
-  -- Tags - special highlight, padded (ALWAYS reserve space if show_tags is true)
-  if opts.show_tags then
-    if widths.tags and widths.tags > 0 then
-      local max_width = opts.tags_max_width and math.min(widths.tags, opts.tags_max_width) or widths.tags
-      if #headline.all_tags > 0 then
-        local tags = ':' .. table.concat(headline.all_tags, ':') .. ':'
-        table.insert(segments, { pad(tags, max_width) .. ' ', '@org.tag' })
-        table.insert(text_parts, tags)
-      else
-        -- Add empty space to maintain column alignment
-        table.insert(segments, { string.rep(' ', max_width + 1) })
-      end
-    end
-  end
-
-  -- TODO state - colored based on type, padded (ALWAYS reserve space if show_todo_state is true)
-  if opts.show_todo_state then
-    if widths.todo and widths.todo > 0 then
-      if headline.todo_value then
-        local hl = get_todo_highlight(headline.todo_type)
-        table.insert(segments, { pad(headline.todo_value, widths.todo) .. ' ', hl })
-        table.insert(text_parts, headline.todo_value)
-      else
-        -- Add empty space to maintain column alignment
-        table.insert(segments, { string.rep(' ', widths.todo + 1) })
-      end
-    end
-  end
-
-  -- Priority - warning color, padded (ALWAYS reserve space if show_priority is true)
-  if opts.show_priority then
-    if widths.priority and widths.priority > 0 then
-      if headline.priority then
-        local priority = '[#' .. headline.priority .. ']'
-        table.insert(segments, { pad(priority, widths.priority) .. ' ', '@org.priority' })
-        table.insert(text_parts, priority)
-      else
-        -- Add empty space to maintain column alignment
-        table.insert(segments, { string.rep(' ', widths.priority + 1) })
-      end
-    end
-  end
-
-  -- Title with level indicator - colored by depth
-  local title = string.format('%s %s', string.rep('*', headline.level), headline.title)
-  local level_hl = get_level_highlight(headline.level)
-  table.insert(segments, { title, level_hl })
-  table.insert(text_parts, title)
-
-  -- Return both formatted segments and plain text for searching
-  return segments, table.concat(text_parts, ' ')
+  -- Use highlights library for segment generation
+  return highlights.get_headline_segments(entry.headline, entry.filename, opts)
 end
 
 ---Format orgfile entry for display with highlights
