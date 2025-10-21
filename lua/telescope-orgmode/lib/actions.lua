@@ -1,5 +1,6 @@
 local org = require('telescope-orgmode.org')
 local operations = require('telescope-orgmode.lib.operations')
+local entry_normalize = require('telescope-orgmode.lib.entry_normalize')
 
 local M = {}
 
@@ -7,10 +8,10 @@ local M = {}
 ---@param entry table Entry from any picker framework
 ---@return table|nil destination OrgApiHeadline or OrgApiFile
 function M.entry_to_destination(entry)
-  -- Handle different entry formats from various frameworks
-  local headline_data = entry.headline or (entry.value and entry.value.headline) or entry.data -- fzf-lua might use this
-
-  local filename = entry.filename or entry.file or (entry.value and entry.value.filename)
+  -- Normalize entry to standard format
+  local normalized = entry_normalize.normalize_entry(entry)
+  local filename = normalized.filename
+  local headline_data = normalized.headline
 
   if headline_data then
     -- Headline destination
