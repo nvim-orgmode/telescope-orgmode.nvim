@@ -94,6 +94,59 @@ local function format_item(item)
   return { { item.text or tostring(item) } }
 end
 
+---Navigate to selected item
+---@param item table Snacks item
+local function navigate_to(item)
+  -- Snacks passes the item directly, not wrapped
+  -- Extract entry from wrapper or use item directly
+  local entry = item.__entry or item
+
+  if not entry or not entry.filename then
+    vim.notify('Invalid item for navigation' .. vim.inspect(entry), vim.log.levels.ERROR)
+    return
+  end
+
+  local success = lib_actions.execute_navigate(entry)
+  if not success then
+    vim.notify('Could not navigate to ' .. (entry.filename or 'unknown'), vim.log.levels.ERROR)
+  end
+end
+
+---Refile source headline to selected destination
+---@param source_headline table Original headline to refile
+---@param item table Selected destination item
+local function refile_action(source_headline, item)
+  -- Snacks passes the item directly, not wrapped
+  -- Extract entry from wrapper or use item directly
+  local entry = item.__entry or item
+
+  if not entry or not entry.filename then
+    vim.notify('Invalid destination entry', vim.log.levels.ERROR)
+    return
+  end
+
+  -- Use lib_actions for refile workflow
+  local success, message = lib_actions.execute_refile(source_headline, entry)
+  vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.WARN)
+end
+
+---Insert link to selected item
+---@param item table Selected item
+local function insert_link_action(item)
+  -- Snacks passes the item directly, not wrapped
+  -- Extract entry from wrapper or use item directly
+  local entry = item.__entry or item
+
+  if not entry or not entry.filename then
+    vim.notify('Invalid entry', vim.log.levels.ERROR)
+    return
+  end
+
+  -- Use lib_actions for insert link workflow
+  local success, message = lib_actions.execute_insert_link(entry)
+  vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.ERROR)
+end
+
 ---Create new picker with current state
 ---@param state PickerState
 ---@param picker_type string
@@ -133,9 +186,14 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
   }
 
   -- Add picker-specific confirm action
+  -- Snacks confirm signature: function(picker, item)
+  -- Use vim.schedule to defer action until after picker closes cleanly
   if picker_type == 'search_headings' then
-    picker_opts.confirm = function(item)
-      navigate_to(item)
+    picker_opts.confirm = function(picker, item)
+      picker:close()
+      vim.schedule(function()
+        navigate_to(item)
+      end)
     end
   elseif picker_type == 'refile_heading' then
     -- Get source headline before opening picker
@@ -145,12 +203,18 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
       return nil
     end
 
-    picker_opts.confirm = function(item)
-      refile_action(source_headline, item)
+    picker_opts.confirm = function(picker, item)
+      picker:close()
+      vim.schedule(function()
+        refile_action(source_headline, item)
+      end)
     end
   elseif picker_type == 'insert_link' then
-    picker_opts.confirm = function(item)
-      insert_link_action(item)
+    picker_opts.confirm = function(picker, item)
+      picker:close()
+      vim.schedule(function()
+        insert_link_action(item)
+      end)
     end
   end
 
@@ -211,45 +275,6 @@ function toggle_current_file(state, picker_type, base_opts, picker)
     opts = base_opts,
     refresh_fn = refresh,
   })
-end
-
----Navigate to selected item
----@param item table Snacks item
-local function navigate_to(item)
-  local entry = item.__entry
-  local success = lib_actions.execute_navigate(entry)
-  if not success then
-    vim.notify('Could not navigate to ' .. item.file, vim.log.levels.ERROR)
-  end
-end
-
----Refile source headline to selected destination
----@param source_headline table Original headline to refile
----@param item table Selected destination item
-local function refile_action(source_headline, item)
-  local entry = item.__entry
-  if not entry then
-    vim.notify('Invalid destination entry', vim.log.levels.ERROR)
-    return
-  end
-
-  -- Use lib_actions for refile workflow
-  local success, message = lib_actions.execute_refile(source_headline, entry)
-  vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.WARN)
-end
-
----Insert link to selected item
----@param item table Selected item
-local function insert_link_action(item)
-  local entry = item.__entry
-  if not entry then
-    vim.notify('Invalid entry', vim.log.levels.ERROR)
-    return
-  end
-
-  -- Use lib_actions for insert link workflow
-  local success, message = lib_actions.execute_insert_link(entry)
-  vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.ERROR)
 end
 
 ---Search and navigate to headlines

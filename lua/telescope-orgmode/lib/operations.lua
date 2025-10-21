@@ -65,13 +65,28 @@ function M.insert_link(entry, opts)
   return success and result or nil
 end
 
----Navigate to entry
----@param entry table { filename: string, lnum: number }
+---Navigate to entry (handles both simple format and OrgApiHeadline/OrgApiFile)
+---@param entry table { filename: string, lnum: number } | OrgApiHeadline | OrgApiFile
 ---@return boolean success
 function M.navigate_to(entry)
-  vim.cmd('edit ' .. vim.fn.fnameescape(entry.filename))
-  if entry.lnum then
-    vim.api.nvim_win_set_cursor(0, { entry.lnum, 0 })
+  -- Extract filename and line number from different formats
+  local filename, lnum
+
+  if entry.file and entry.position then
+    -- OrgApiHeadline format
+    filename = entry.file.filename
+    lnum = entry.position.start_line
+  elseif entry.filename then
+    -- Simple format or OrgApiFile
+    filename = entry.filename
+    lnum = entry.lnum or entry.position and entry.position.start_line
+  else
+    return false
+  end
+
+  vim.cmd('edit ' .. vim.fn.fnameescape(filename))
+  if lnum then
+    vim.api.nvim_win_set_cursor(0, { lnum, 0 })
   end
   return true
 end
