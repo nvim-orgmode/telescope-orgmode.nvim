@@ -12,8 +12,14 @@ local M = {}
 
 ---Create picker state from config and opts
 ---Centralizes state initialization logic to avoid duplication
----@param picker_config table Config object with defaults
----@param opts table User options (may contain tag_query, current_file)
+---Snacks-specific state creation (2-param pattern)
+---
+---Snacks requires a config transformation layer (picker_config) because not all
+---user options map directly to state - some configure picker UI, some configure state.
+---This differs from Telescope's simpler 1-param pattern.
+---
+---@param picker_config table Config object with defaults (output of config:new())
+---@param opts table Raw user options (may contain tag_query, current_file from keybindings)
 ---@return PickerState
 local function create_state(picker_config, opts)
   return PickerState:new(picker_config.mode, {
