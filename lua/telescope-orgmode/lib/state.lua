@@ -45,4 +45,36 @@ function PickerState:get_all_filters()
   return self.filters
 end
 
+---Generate title context string showing active filters
+---Format: "[tag:work] [file:todo.org]"
+---@return string
+function PickerState:get_title_context()
+  local parts = {}
+
+  -- Tag filter
+  if self.filters.tag_query then
+    table.insert(parts, string.format('[tag:%s]', self.filters.tag_query))
+  end
+
+  -- File filter (only_current_file)
+  if self.filters.only_current_file then
+    -- Extract filename from path for brevity
+    local file = self.filters.current_file or 'current'
+    local filename = file:match('([^/]+)$') or file
+    table.insert(parts, string.format('[file:%s]', filename))
+  end
+
+  -- Archived filter (only if explicitly disabled)
+  if self.filters.archived == false then
+    table.insert(parts, '[no-archive]')
+  end
+
+  -- Max depth filter (only if not default)
+  if self.filters.max_depth and self.filters.max_depth > 0 then
+    table.insert(parts, string.format('[depth:%d]', self.filters.max_depth))
+  end
+
+  return table.concat(parts, ' ')
+end
+
 return PickerState
