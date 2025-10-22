@@ -336,4 +336,122 @@ function M.insert_link(user_opts)
     :find()
 end
 
+---Tags search picker
+---@param user_opts table|nil
+function M.search_tags(user_opts)
+  local tags_lib = require('telescope-orgmode.lib.tags')
+
+  -- Merge config
+  local opts = config:new('search_tags', user_opts)
+
+  -- Load and sort tags
+  local tags, sort_mode = tags_lib.load_and_sort_tags(opts)
+
+  if #tags == 0 then
+    vim.notify('No tags found in org files', vim.log.levels.INFO)
+    return
+  end
+
+  -- Create tag previewer
+  local function create_tag_previewer()
+    return require('telescope.previewers').new_buffer_previewer({
+      title = 'Headlines with Tag',
+      define_preview = function(self, entry)
+        local tag = entry.value.tag
+        local lines = tags_lib.get_tag_preview_lines(tag, { max_count = 50 })
+        vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+      end,
+    })
+  end
+
+  -- Create entry maker for tag items
+  local function make_tag_entry(tag_info)
+    return {
+      value = tag_info,
+      display = tags_lib.format_tag_display(tag_info),
+      ordinal = tag_info.tag,
+    }
+  end
+
+  -- Create and launch picker
+  pickers
+    .new(opts, {
+      prompt_title = opts.prompt_title,
+      default_text = opts.default_text,
+      finder = finders.new_table({
+        results = tags,
+        entry_maker = make_tag_entry,
+      }),
+      sorter = conf.generic_sorter(opts),
+      previewer = create_tag_previewer(),
+      layout_config = {
+        width = 0.95,
+        height = 0.95,
+        preview_width = 0.4,
+      },
+      attach_mappings = function(prompt_bufnr, map)
+        -- Toggle sort mode
+        local toggle_sort_binding = keybindings.bindings.toggle_tag_sort
+        local function toggle_sort()
+          local current_picker = action_state.get_current_picker(prompt_bufnr)
+          sort_mode = tags_lib.toggle_sort_mode(sort_mode)
+          tags = tags_lib.sort_tags(tags, sort_mode)
+
+          current_picker:refresh(
+            finders.new_table({
+              results = tags,
+              entry_maker = make_tag_entry,
+            }),
+            { reset_prompt = false }
+          )
+
+          vim.notify(string.format('Sort: %s', sort_mode), vim.log.levels.INFO)
+        end
+
+        for mode, key in pairs(toggle_sort_binding.modes) do
+          map(mode, key, toggle_sort, { desc = toggle_sort_binding.description })
+        end
+
+        -- Return to headlines picker
+        local return_binding = keybindings.bindings.return_to_headlines
+        local function return_to_headlines()
+          actions.close(prompt_bufnr)
+          M.search_headings({
+            default_text = '',
+            context = opts.context,
+          })
+        end
+
+        for mode, key in pairs(return_binding.modes) do
+          map(mode, key, return_to_headlines, { desc = return_binding.description })
+        end
+
+        -- Select tag -> filter headlines by tag
+        action_set.select:replace(function()
+          local selection = action_state.get_selected_entry()
+          actions.close(prompt_bufnr)
+
+          if not selection then
+            vim.notify('No tag selected', vim.log.levels.WARN)
+            return
+          end
+
+          local tag = selection.value.tag
+
+          -- Navigate to headlines filtered by tag
+          M.search_headings({
+            tag_query = '+' .. tag,
+            default_text = '',
+            context = {
+              selected_tag = tag,
+            },
+          })
+        end)
+
+        return true
+      end,
+    })
+    :find()
+end
+
 return M

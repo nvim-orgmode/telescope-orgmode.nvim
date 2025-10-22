@@ -2,22 +2,31 @@ local M = {}
 
 ---Keybinding definitions (semantic, not implementation)
 ---Each binding defines what action does, not how it's implemented in specific framework
+---Modes: 'i' = insert mode, 'n' = normal mode
 M.bindings = {
   toggle_mode = {
     description = 'Toggle between headlines and orgfiles mode',
-    default_key = '<C-Space>',
+    modes = { i = '<C-Space>', n = '<C-Space>' },
   },
   toggle_current_file = {
     description = 'Toggle filter: current file only',
-    default_key = '<C-f>',
+    modes = { i = '<C-f>', n = '<C-f>' },
   },
   open_tag_picker = {
     description = 'Open tag selection picker',
-    default_key = '<C-t>',
+    modes = { i = '<C-t>', n = '<C-t>' },
   },
   confirm = {
     description = 'Select entry and execute default action',
-    default_key = '<CR>',
+    modes = { i = '<CR>', n = '<CR>' },
+  },
+  toggle_tag_sort = {
+    description = 'Toggle tag sort mode (frequency/alphabetical)',
+    modes = { i = '<C-s>', n = '<C-s>' },
+  },
+  return_to_headlines = {
+    description = 'Return to headlines picker from tags',
+    modes = { i = '<C-t>', n = '<C-t>' },
   },
 }
 
@@ -46,7 +55,7 @@ function M.execute_action(action_name, context)
     -- Pre-fill search with previously selected tag
     local selected_tag = context.opts.context and context.opts.context.selected_tag or ''
 
-    require('telescope-orgmode.picker.search_tags').search_tags({
+    require('telescope-orgmode').search_tags({
       default_text = selected_tag,
       context = context.opts.context,
     })

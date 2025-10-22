@@ -56,8 +56,7 @@ Refile heading from capture or current file under destination with `:Telescope o
     vim.keymap.set("n", "<leader>fh", require('telescope-orgmode').search_headings)
     vim.keymap.set("n", "<leader>li", require('telescope-orgmode').insert_link)
 
-    -- Note: search_tags requires Telescope, even with Snacks adapter
-    -- vim.keymap.set("n", "<leader>ot", require('telescope-orgmode').search_tags)
+    vim.keymap.set("n", "<leader>ot", require('telescope-orgmode').search_tags)
   end,
 }
 ```
@@ -173,18 +172,16 @@ vim.keymap.set('n', '<leader>fh', require('telescope-orgmode').search_headings)
 vim.keymap.set('n', '<leader>r', require('telescope-orgmode').refile_heading)
 vim.keymap.set('n', '<leader>li', require('telescope-orgmode').insert_link)
 
--- Note: search_tags is not yet adapter-aware, requires Telescope
 ```
 
 **Important Notes**:
 - When using Snacks adapter, use the direct module API (`require('telescope-orgmode')`), not the Telescope extension API
-- `search_tags` is currently **Telescope-only** and has not been refactored to support multiple frameworks
 
 **Adapter System Coverage**:
 - ✅ `search_headings` - Supports both Telescope and Snacks
 - ✅ `refile_heading` - Supports both Telescope and Snacks
 - ✅ `insert_link` - Supports both Telescope and Snacks
-- ❌ `search_tags` - Telescope only (not yet refactored)
+- ✅ `search_tags` - Supports both Telescope and Snacks
 
 **Benefits of the adapter system**:
 - Same API regardless of picker framework

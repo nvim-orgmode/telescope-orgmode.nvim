@@ -228,4 +228,54 @@ function M.get_link_destination(entry, opts)
   return M.get_inter_file_link(entry)
 end
 
+---Load tags with occurrence counts
+---@param opts? { archived?: boolean }
+---@return { tag: string, count: number, files: string[] }[]
+function M.load_tags(opts)
+  opts = opts or {}
+  local tag_collection = require('telescope-orgmode.tag_collection')
+  local tags = tag_collection.collect_tags_with_counts()
+
+  -- Sort by frequency by default
+  return tag_collection.sort_tags(tags, 'frequency')
+end
+
+---Get headlines matching a specific tag (for preview)
+---@param tag string Tag to search for
+---@param opts? { max_count?: number, archived?: boolean }
+---@return { todo: string, priority: string, title: string, filename: string }[]
+function M.get_headlines_for_tag(tag, opts)
+  opts = opts or {}
+  local max_count = opts.max_count or 50
+  local headlines = {}
+
+  local orgmode = require('orgmode')
+  local Search = require('orgmode.files.elements.search')
+  local search = Search:new('+' .. tag)
+
+  local count = 0
+  for _, file in ipairs(orgmode.files:all()) do
+    if count >= max_count then
+      break
+    end
+
+    for _, headline in ipairs(file:apply_search(search, false)) do
+      if count >= max_count then
+        break
+      end
+
+      table.insert(headlines, {
+        todo = headline:get_todo() or '',
+        priority = headline:get_priority() or '',
+        title = headline:get_title(),
+        filename = file.filename,
+      })
+
+      count = count + 1
+    end
+  end
+
+  return headlines
+end
+
 return M

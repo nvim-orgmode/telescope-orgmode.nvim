@@ -10,6 +10,45 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
+---Transform framework-agnostic keybindings to Snacks format
+---@param binding_names string[] Names of bindings to transform
+---@param action_handlers table<string, function> Map of action_name -> handler function
+---@return table Snacks keys table
+local function transform_keybindings(binding_names, action_handlers)
+  local keys = {}
+
+  for _, name in ipairs(binding_names) do
+    local binding = keybindings.bindings[name]
+    if binding and action_handlers[name] then
+      -- Extract all unique keys from modes
+      local unique_keys = {}
+      for _, key in pairs(binding.modes) do
+        unique_keys[key] = true
+      end
+
+      -- Snacks expects single key with mode array
+      -- If all modes use same key, use it once; otherwise register separately per mode
+      for key, _ in pairs(unique_keys) do
+        -- Collect modes that use this key
+        local modes_for_key = {}
+        for mode, mode_key in pairs(binding.modes) do
+          if mode_key == key then
+            table.insert(modes_for_key, mode)
+          end
+        end
+
+        keys[key] = {
+          action_handlers[name],
+          mode = modes_for_key,
+          desc = binding.description,
+        }
+      end
+    end
+  end
+
+  return keys
+end
+
 ---Format headline entry for display with highlights and column padding
 ---@param entry table Raw entry with headline data
 ---@param opts table Display options with widths
@@ -167,6 +206,22 @@ end
 ---@param base_opts table
 ---@param preserved_query? string
 ---@return table Snacks picker
+---Open tag picker from headlines search
+---@param picker table Current Snacks picker
+---@param base_opts table Base options
+local function open_tag_picker(picker, base_opts)
+  -- Close current picker
+  picker:close()
+
+  -- Execute action using keybindings library
+  vim.schedule(function()
+    keybindings.execute_action('open_tag_picker', {
+      opts = base_opts,
+      close_fn = function() end, -- Picker already closed
+    })
+  end)
+end
+
 local function create_picker(state, picker_type, base_opts, preserved_query)
   local picker_config = config:new(picker_type, base_opts)
   local mode = state:get_current()
@@ -193,29 +248,14 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
   local full_title = state:get_full_title(base_title)
 
   local picker_opts = {
-    title = picker_config.prompt_titles[mode],
-    items = create_finder(state, picker_config),
+    title = full_title,
+    items = items,
     pattern = preserved_query or '',
     preview = 'preview', -- Use default file previewer
     format = format_item, -- Custom formatter with highlights
     win = {
       input = {
-        keys = {
-          ['<C-Space>'] = {
-            function(picker)
-              toggle_mode(state, picker_type, base_opts, picker)
-            end,
-            mode = { 'i', 'n' },
-            desc = 'Toggle between headlines and org files',
-          },
-          ['<C-f>'] = {
-            function(picker)
-              toggle_current_file(state, picker_type, base_opts, picker)
-            end,
-            mode = { 'i', 'n' },
-            desc = 'Toggle current file filter',
-          },
-        },
+        keys = keys,
       },
     },
   }

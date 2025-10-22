@@ -51,7 +51,7 @@ function M.insert_link(opts)
 end
 
 function M.search_tags(opts)
-  return require('telescope-orgmode.picker.search_tags').search_tags(opts)
+  return get_adapter().search_tags(opts)
 end
 
 ---Set the active adapter at runtime
