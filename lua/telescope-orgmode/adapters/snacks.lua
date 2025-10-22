@@ -449,6 +449,7 @@ function M.search_tags(user_opts)
   local picker_opts = {
     title = opts.prompt_title,
     items = items,
+    pattern = opts.default_text or '',
     format = format_item,
     -- Lazy preview function - computed on-demand when user navigates to item
     preview = function(ctx)
