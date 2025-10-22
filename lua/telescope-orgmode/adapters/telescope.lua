@@ -16,6 +16,20 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
+---Create picker state from opts
+---Centralizes state initialization logic to avoid duplication
+---@param opts table User options with mode, filters, etc.
+---@return PickerState
+local function create_state(opts)
+  return PickerState:new(opts.mode or 'headlines', {
+    only_current_file = opts.only_current_file or false,
+    current_file = opts.original_file,
+    archived = opts.archived or false,
+    max_depth = opts.max_depth,
+    tag_query = opts.tag_query,
+  })
+end
+
 ---Create telescope finder for current state
 ---@param state PickerState
 ---@param opts table
@@ -153,11 +167,7 @@ function M.search_headings(user_opts)
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
 
   -- Create state manager
-  local state = PickerState:new(opts.mode or 'headlines', {
-    only_current_file = opts.only_current_file or false,
-    archived = opts.archived or false,
-    max_depth = opts.max_depth,
-  })
+  local state = create_state(opts)
 
   -- Create initial finder
   local initial_finder = create_finder(state, opts)
@@ -169,7 +179,7 @@ function M.search_headings(user_opts)
   -- Create and launch picker
   pickers
     .new(opts, {
-      prompt_title = opts.prompt_titles[state:get_current()],
+      prompt_title = full_title,
       default_text = opts.default_text or '',
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
@@ -214,11 +224,7 @@ function M.refile_heading(user_opts)
   end
 
   -- Create state manager
-  local state = PickerState:new(opts.mode or 'headlines', {
-    only_current_file = opts.only_current_file or false,
-    archived = opts.archived or false,
-    max_depth = opts.max_depth,
-  })
+  local state = create_state(opts)
 
   -- Create initial finder
   local initial_finder = create_finder(state, opts)
@@ -244,7 +250,7 @@ function M.refile_heading(user_opts)
   -- Create and launch picker
   pickers
     .new(opts, {
-      prompt_title = opts.prompt_titles[state:get_current()],
+      prompt_title = full_title,
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
@@ -273,11 +279,7 @@ function M.insert_link(user_opts)
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
 
   -- Create state manager
-  local state = PickerState:new(opts.mode or 'headlines', {
-    only_current_file = opts.only_current_file or false,
-    archived = opts.archived or false,
-    max_depth = opts.max_depth,
-  })
+  local state = create_state(opts)
 
   -- Create initial finder
   local initial_finder = create_finder(state, opts)
@@ -318,7 +320,7 @@ function M.insert_link(user_opts)
   -- Create and launch picker
   pickers
     .new(opts, {
-      prompt_title = opts.prompt_titles[state:get_current()],
+      prompt_title = full_title,
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),

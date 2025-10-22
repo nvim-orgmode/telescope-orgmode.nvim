@@ -10,6 +10,21 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
+---Create picker state from config and opts
+---Centralizes state initialization logic to avoid duplication
+---@param picker_config table Config object with defaults
+---@param opts table User options (may contain tag_query, current_file)
+---@return PickerState
+local function create_state(picker_config, opts)
+  return PickerState:new(picker_config.mode, {
+    only_current_file = picker_config.only_current_file,
+    current_file = opts.current_file or picker_config.current_file,
+    archived = picker_config.archived,
+    max_depth = picker_config.max_depth,
+    tag_query = opts.tag_query,
+  })
+end
+
 ---Transform framework-agnostic keybindings to Snacks format
 ---@param binding_names string[] Names of bindings to transform
 ---@param action_handlers table<string, function> Map of action_name -> handler function
@@ -372,14 +387,7 @@ end
 function M.search_headings(opts)
   opts = opts or {}
   local picker_config = config:new('search_headings', opts)
-
-  -- Initialize state
-  local state = PickerState:new(picker_config.mode, {
-    only_current_file = picker_config.only_current_file,
-    archived = picker_config.archived,
-    max_depth = picker_config.max_depth,
-  })
-
+  local state = create_state(picker_config, opts)
   return create_picker(state, 'search_headings', opts)
 end
 
@@ -389,14 +397,7 @@ end
 function M.refile_heading(opts)
   opts = opts or {}
   local picker_config = config:new('refile_heading', opts)
-
-  -- Initialize state
-  local state = PickerState:new(picker_config.mode, {
-    only_current_file = picker_config.only_current_file,
-    archived = picker_config.archived,
-    max_depth = picker_config.max_depth,
-  })
-
+  local state = create_state(picker_config, opts)
   return create_picker(state, 'refile_heading', opts)
 end
 
@@ -406,14 +407,7 @@ end
 function M.insert_link(opts)
   opts = opts or {}
   local picker_config = config:new('insert_link', opts)
-
-  -- Initialize state
-  local state = PickerState:new(picker_config.mode, {
-    only_current_file = picker_config.only_current_file,
-    archived = picker_config.archived,
-    max_depth = picker_config.max_depth,
-  })
-
+  local state = create_state(picker_config, opts)
   return create_picker(state, 'insert_link', opts)
 end
 
