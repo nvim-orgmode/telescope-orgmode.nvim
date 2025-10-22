@@ -17,8 +17,13 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 local M = {}
 
 ---Create picker state from opts
----Centralizes state initialization logic to avoid duplication
----@param opts table User options with mode, filters, etc.
+---Telescope-specific state creation (1-param pattern)
+---
+---Telescope doesn't need a separate config transformation layer - user options
+---flow directly to state after adding original_file field. This simpler pattern
+---differs from Snacks' 2-param approach with explicit picker_config.
+---
+---@param opts table Pre-processed user options (original_file already added)
 ---@return PickerState
 local function create_state(opts)
   return PickerState:new(opts.mode or 'headlines', {
