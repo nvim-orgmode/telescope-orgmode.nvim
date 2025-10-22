@@ -6,25 +6,29 @@ describe('[Unit: lib/keybindings]', function()
     it('should define toggle_mode binding', function()
       assert.is_not_nil(keybindings.bindings.toggle_mode)
       assert.are.equal('Toggle between headlines and orgfiles mode', keybindings.bindings.toggle_mode.description)
-      assert.are.equal('<C-Space>', keybindings.bindings.toggle_mode.default_key)
+      assert.are.equal('<C-Space>', keybindings.bindings.toggle_mode.modes.i)
+      assert.are.equal('<C-Space>', keybindings.bindings.toggle_mode.modes.n)
     end)
 
     it('should define toggle_current_file binding', function()
       assert.is_not_nil(keybindings.bindings.toggle_current_file)
       assert.are.equal('Toggle filter: current file only', keybindings.bindings.toggle_current_file.description)
-      assert.are.equal('<C-f>', keybindings.bindings.toggle_current_file.default_key)
+      assert.are.equal('<C-f>', keybindings.bindings.toggle_current_file.modes.i)
+      assert.are.equal('<C-f>', keybindings.bindings.toggle_current_file.modes.n)
     end)
 
     it('should define open_tag_picker binding', function()
       assert.is_not_nil(keybindings.bindings.open_tag_picker)
       assert.are.equal('Open tag selection picker', keybindings.bindings.open_tag_picker.description)
-      assert.are.equal('<C-t>', keybindings.bindings.open_tag_picker.default_key)
+      assert.are.equal('<C-t>', keybindings.bindings.open_tag_picker.modes.i)
+      assert.are.equal('<C-t>', keybindings.bindings.open_tag_picker.modes.n)
     end)
 
     it('should define confirm binding', function()
       assert.is_not_nil(keybindings.bindings.confirm)
       assert.are.equal('Select entry and execute default action', keybindings.bindings.confirm.description)
-      assert.are.equal('<CR>', keybindings.bindings.confirm.default_key)
+      assert.are.equal('<CR>', keybindings.bindings.confirm.modes.i)
+      assert.are.equal('<CR>', keybindings.bindings.confirm.modes.n)
     end)
   end)
 
@@ -148,8 +152,8 @@ describe('[Unit: lib/keybindings]', function()
           },
         }
 
-        -- Mock the search_tags module and capture arguments
-        package.loaded['telescope-orgmode.picker.search_tags'] = {
+        -- Mock the main module and capture arguments
+        package.loaded['telescope-orgmode'] = {
           search_tags = function(opts)
             passed_opts = opts
           end,
@@ -161,7 +165,7 @@ describe('[Unit: lib/keybindings]', function()
         assert.are.equal('work', passed_opts.default_text)
 
         -- Cleanup mock
-        package.loaded['telescope-orgmode.picker.search_tags'] = nil
+        package.loaded['telescope-orgmode'] = nil
       end)
     end)
   end)

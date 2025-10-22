@@ -47,6 +47,10 @@ M.picker_defaults = {
       orgfiles = 'Refile to File',
     },
   },
+  search_tags = {
+    initial_sort = 'frequency',
+    prompt_title = 'Org Tags',
+  },
 }
 
 ---Create config for specific picker

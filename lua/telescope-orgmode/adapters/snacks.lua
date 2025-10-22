@@ -10,6 +10,45 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
+---Transform framework-agnostic keybindings to Snacks format
+---@param binding_names string[] Names of bindings to transform
+---@param action_handlers table<string, function> Map of action_name -> handler function
+---@return table Snacks keys table
+local function transform_keybindings(binding_names, action_handlers)
+  local keys = {}
+
+  for _, name in ipairs(binding_names) do
+    local binding = keybindings.bindings[name]
+    if binding and action_handlers[name] then
+      -- Extract all unique keys from modes
+      local unique_keys = {}
+      for _, key in pairs(binding.modes) do
+        unique_keys[key] = true
+      end
+
+      -- Snacks expects single key with mode array
+      -- If all modes use same key, use it once; otherwise register separately per mode
+      for key, _ in pairs(unique_keys) do
+        -- Collect modes that use this key
+        local modes_for_key = {}
+        for mode, mode_key in pairs(binding.modes) do
+          if mode_key == key then
+            table.insert(modes_for_key, mode)
+          end
+        end
+
+        keys[key] = {
+          action_handlers[name],
+          mode = modes_for_key,
+          desc = binding.description,
+        }
+      end
+    end
+  end
+
+  return keys
+end
+
 ---Format headline entry for display with highlights and column padding
 ---@param entry table Raw entry with headline data
 ---@param opts table Display options with widths
@@ -153,34 +192,52 @@ end
 ---@param base_opts table
 ---@param preserved_query? string
 ---@return table Snacks picker
+---Open tag picker from headlines search
+---@param picker table Current Snacks picker
+---@param base_opts table Base options
+local function open_tag_picker(picker, base_opts)
+  -- Close current picker
+  picker:close()
+
+  -- Execute action using keybindings library
+  vim.schedule(function()
+    keybindings.execute_action('open_tag_picker', {
+      opts = base_opts,
+      close_fn = function() end, -- Picker already closed
+    })
+  end)
+end
+
 local function create_picker(state, picker_type, base_opts, preserved_query)
   local picker_config = config:new(picker_type, base_opts)
   local mode = state:get_current()
 
+  local items = create_finder(state, picker_config)
+
+  -- Allow empty items array - Snacks handles it gracefully and user can still adjust filters
+
+  -- Transform keybindings to Snacks format
+  local keys = transform_keybindings({ 'toggle_mode', 'toggle_current_file', 'open_tag_picker' }, {
+    toggle_mode = function(picker)
+      toggle_mode(state, picker_type, base_opts, picker)
+    end,
+    toggle_current_file = function(picker)
+      toggle_current_file(state, picker_type, base_opts, picker)
+    end,
+    open_tag_picker = function(picker)
+      open_tag_picker(picker, base_opts)
+    end,
+  })
+
   local picker_opts = {
     title = picker_config.prompt_titles[mode],
-    items = create_finder(state, picker_config),
+    items = items,
     pattern = preserved_query or '',
     preview = 'preview', -- Use default file previewer
     format = format_item, -- Custom formatter with highlights
     win = {
       input = {
-        keys = {
-          ['<C-Space>'] = {
-            function(picker)
-              toggle_mode(state, picker_type, base_opts, picker)
-            end,
-            mode = { 'i', 'n' },
-            desc = 'Toggle between headlines and org files',
-          },
-          ['<C-f>'] = {
-            function(picker)
-              toggle_current_file(state, picker_type, base_opts, picker)
-            end,
-            mode = { 'i', 'n' },
-            desc = 'Toggle current file filter',
-          },
-        },
+        keys = keys,
       },
     },
   }
@@ -326,6 +383,109 @@ function M.insert_link(opts)
   })
 
   return create_picker(state, 'insert_link', opts)
+end
+
+---Convert tag_info array to Snacks items
+---@param tag_infos table[] Array of tag info objects
+---@return table[] Snacks items
+local function create_tag_items(tag_infos)
+  local tags_lib = require('telescope-orgmode.lib.tags')
+  local items = {}
+
+  for _, tag_info in ipairs(tag_infos) do
+    local display_text = tags_lib.format_tag_display(tag_info)
+    local item = {
+      text = display_text,
+      _formatted = { { display_text } },
+      tag_info = tag_info, -- Keep for lazy preview function
+    }
+
+    table.insert(items, item)
+  end
+
+  return items
+end
+
+---Search tags and navigate to headlines with selected tag
+---@param user_opts? table User options
+---@return table|nil Snacks picker or nil if no tags found
+function M.search_tags(user_opts)
+  local tags_lib = require('telescope-orgmode.lib.tags')
+
+  -- Merge config
+  local opts = config:new('search_tags', user_opts)
+
+  -- Load and sort tags
+  local tags, sort_mode = tags_lib.load_and_sort_tags(opts)
+
+  if #tags == 0 then
+    vim.notify('No tags found in org files', vim.log.levels.INFO)
+    return nil
+  end
+
+  -- Create items (preview computed lazily)
+  local items = create_tag_items(tags)
+
+  -- Transform keybindings to Snacks format
+  local keys = transform_keybindings({ 'toggle_tag_sort', 'return_to_headlines' }, {
+    toggle_tag_sort = function(picker)
+      sort_mode = tags_lib.toggle_sort_mode(sort_mode)
+      tags = tags_lib.sort_tags(tags, sort_mode)
+      local new_items = create_tag_items(tags)
+      picker:replace(new_items)
+      vim.notify(string.format('Sort: %s', sort_mode), vim.log.levels.INFO)
+    end,
+    return_to_headlines = function(picker)
+      picker:close()
+      vim.schedule(function()
+        M.search_headings({
+          default_text = '',
+          context = opts.context,
+        })
+      end)
+    end,
+  })
+
+  local picker_opts = {
+    title = opts.prompt_title,
+    items = items,
+    format = format_item,
+    -- Lazy preview function - computed on-demand when user navigates to item
+    preview = function(ctx)
+      if not ctx.item or not ctx.item.tag_info then
+        return
+      end
+      local tag = ctx.item.tag_info.tag
+      local preview_lines = tags_lib.get_tag_preview_lines(tag, { max_count = 50 })
+      ctx.preview:set_lines(preview_lines)
+      ctx.preview:highlight({ ft = 'org' })
+    end,
+    confirm = function(picker, item)
+      if not item or not item.tag_info or not item.tag_info.tag then
+        vim.notify('No tag selected', vim.log.levels.WARN)
+        return
+      end
+
+      picker:close()
+      vim.schedule(function()
+        local tag = item.tag_info.tag
+        M.search_headings({
+          tag_query = '+' .. tag,
+          default_text = '',
+          context = {
+            selected_tag = tag,
+          },
+        })
+      end)
+    end,
+    win = {
+      input = {
+        keys = keys,
+      },
+    },
+  }
+
+  return require('snacks').picker(picker_opts)
 end
 
 return M
