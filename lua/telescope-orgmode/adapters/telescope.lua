@@ -136,6 +136,35 @@ local function open_tag_picker_action(opts)
   end
 end
 
+---Create telescope action for filter keybinding
+---@param action_name string Name from keybindings.bindings
+---@param state PickerState
+---@param opts table
+---@param extra_context_fn? fun(context: table, prompt_bufnr: number)
+---@return function telescope action
+local function create_filter_action(action_name, state, opts, extra_context_fn)
+  return function(prompt_bufnr)
+    local function refresh(updated_state)
+      local mode = updated_state:get_current()
+      local new_finder = create_finder(updated_state, opts)
+      local full_title = updated_state:get_full_title(opts.prompt_titles[mode])
+      update_picker(prompt_bufnr, new_finder, full_title)
+    end
+
+    local context = {
+      state = state,
+      opts = opts,
+      refresh_fn = refresh,
+    }
+
+    if extra_context_fn then
+      extra_context_fn(context, prompt_bufnr)
+    end
+
+    keybindings.execute_action(action_name, context)
+  end
+end
+
 ---Attach custom user mappings
 ---@param map function telescope map function
 ---@param opts table
@@ -158,6 +187,28 @@ local function attach_common_mappings(map, state, opts)
   map('n', '<c-f>', toggle_current_file_action(state, opts), { desc = 'Toggle current file only' })
   map('i', '<c-t>', open_tag_picker_action(opts), { desc = 'Open tag picker' })
   map('n', '<c-t>', open_tag_picker_action(opts), { desc = 'Open tag picker' })
+
+  -- Advanced filter keybindings
+  local filter_bindings = {
+    { 'filter_current_buffer', create_filter_action('filter_current_buffer', state, opts) },
+    { 'filter_all_buffers', create_filter_action('filter_all_buffers', state, opts) },
+    {
+      'filter_headline_file',
+      create_filter_action('filter_headline_file', state, opts, function(ctx)
+        local entry = action_state.get_selected_entry()
+        ctx.selected_entry = entry and entry.value
+      end),
+    },
+    { 'drop_filters', create_filter_action('drop_filters', state, opts) },
+  }
+
+  for _, binding_info in ipairs(filter_bindings) do
+    local binding = keybindings.bindings[binding_info[1]]
+    for mode, key in pairs(binding.modes) do
+      map(mode, key, binding_info[2], { desc = binding.description })
+    end
+  end
+
   attach_custom_mappings(map, opts)
 end
 
@@ -170,6 +221,7 @@ function M.search_headings(user_opts)
   -- Capture original buffer for current file filtering
   opts.original_buffer = vim.api.nvim_get_current_buf()
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
+  opts.current_file = opts.original_file
 
   -- Create state manager
   local state = create_state(opts)
@@ -211,6 +263,7 @@ function M.refile_heading(user_opts)
   -- Capture original buffer
   opts.original_buffer = vim.api.nvim_get_current_buf()
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
+  opts.current_file = opts.original_file
 
   -- Get source headline
   local source_headline = org.get_closest_headline()
@@ -282,6 +335,7 @@ function M.insert_link(user_opts)
   -- Capture original buffer
   opts.original_buffer = vim.api.nvim_get_current_buf()
   opts.original_file = vim.api.nvim_buf_get_name(opts.original_buffer)
+  opts.current_file = opts.original_file
 
   -- Create state manager
   local state = create_state(opts)

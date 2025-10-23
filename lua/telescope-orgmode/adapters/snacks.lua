@@ -251,8 +251,41 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
 
   -- Allow empty items array - Snacks handles it gracefully and user can still adjust filters
 
+  -- Helper: create handler for filter keybinding actions
+  local function filter_handler(action_name, extra_context_fn)
+    return function(picker)
+      local current_query = ''
+      if picker.input and picker.input.filter then
+        current_query = picker.input.filter.pattern or ''
+      end
+
+      local context = {
+        state = state,
+        opts = base_opts,
+        refresh_fn = function(updated_state)
+          picker:close()
+          create_picker(updated_state, picker_type, base_opts, current_query)
+        end,
+      }
+
+      if extra_context_fn then
+        extra_context_fn(context, picker)
+      end
+
+      keybindings.execute_action(action_name, context)
+    end
+  end
+
   -- Transform keybindings to Snacks format
-  local keys = transform_keybindings({ 'toggle_mode', 'toggle_current_file', 'open_tag_picker' }, {
+  local keys = transform_keybindings({
+    'toggle_mode',
+    'toggle_current_file',
+    'open_tag_picker',
+    'filter_current_buffer',
+    'filter_all_buffers',
+    'filter_headline_file',
+    'drop_filters',
+  }, {
     toggle_mode = function(picker)
       toggle_mode(state, picker_type, base_opts, picker)
     end,
@@ -262,6 +295,13 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
     open_tag_picker = function(picker)
       open_tag_picker(picker, base_opts)
     end,
+    filter_current_buffer = filter_handler('filter_current_buffer'),
+    filter_all_buffers = filter_handler('filter_all_buffers'),
+    filter_headline_file = filter_handler('filter_headline_file', function(ctx, picker)
+      local item = picker:current()
+      ctx.selected_entry = item and (item.__entry or item)
+    end),
+    drop_filters = filter_handler('drop_filters'),
   })
 
   -- Build title with filter context
@@ -392,6 +432,7 @@ end
 ---@return table Snacks picker
 function M.search_headings(opts)
   opts = opts or {}
+  opts.current_file = opts.current_file or vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
   local picker_config = config:new('search_headings', opts)
   local state = create_state(picker_config, opts)
   return create_picker(state, 'search_headings', opts)
@@ -402,6 +443,7 @@ end
 ---@return table|nil Snacks picker or nil if no source headline
 function M.refile_heading(opts)
   opts = opts or {}
+  opts.current_file = opts.current_file or vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
   local picker_config = config:new('refile_heading', opts)
   local state = create_state(picker_config, opts)
   return create_picker(state, 'refile_heading', opts)
@@ -412,6 +454,7 @@ end
 ---@return table Snacks picker
 function M.insert_link(opts)
   opts = opts or {}
+  opts.current_file = opts.current_file or vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
   local picker_config = config:new('insert_link', opts)
   local state = create_state(picker_config, opts)
   return create_picker(state, 'insert_link', opts)

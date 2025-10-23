@@ -168,5 +168,219 @@ describe('[Unit: lib/keybindings]', function()
         package.loaded['telescope-orgmode'] = nil
       end)
     end)
+
+    describe('filter_current_buffer', function()
+      it('should set current_files to current buffer file', function()
+        local state = PickerState:new('headlines')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = { current_file = '/path/to/current.org' },
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('filter_current_buffer', context)
+
+        assert.is_true(refresh_called)
+        assert.are.same({ '/path/to/current.org' }, state:get_filter('current_files'))
+      end)
+
+      it('should work in headlines mode', function()
+        local state = PickerState:new('headlines')
+        local context = {
+          state = state,
+          opts = { current_file = '/path/to/file.org' },
+          refresh_fn = function() end,
+        }
+
+        keybindings.execute_action('filter_current_buffer', context)
+
+        assert.are.same({ '/path/to/file.org' }, state:get_filter('current_files'))
+      end)
+
+      it('should work in orgfiles mode', function()
+        local state = PickerState:new('orgfiles')
+        local context = {
+          state = state,
+          opts = { current_file = '/path/to/file.org' },
+          refresh_fn = function() end,
+        }
+
+        keybindings.execute_action('filter_current_buffer', context)
+
+        assert.are.same({ '/path/to/file.org' }, state:get_filter('current_files'))
+      end)
+    end)
+
+    describe('filter_all_buffers', function()
+      it('should set current_files to all open org buffers', function()
+        local state = PickerState:new('headlines')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('filter_all_buffers', context)
+
+        assert.is_true(refresh_called)
+        -- Should have called filters.get_open_buffers and set result
+        local current_files = state:get_filter('current_files')
+        assert.is_table(current_files)
+        -- Can't test exact contents since it depends on actual open buffers
+      end)
+
+      it('should work in both modes', function()
+        -- Test headlines mode
+        local state_headlines = PickerState:new('headlines')
+        keybindings.execute_action('filter_all_buffers', {
+          state = state_headlines,
+          opts = {},
+          refresh_fn = function() end,
+        })
+        assert.is_table(state_headlines:get_filter('current_files'))
+
+        -- Test orgfiles mode
+        local state_orgfiles = PickerState:new('orgfiles')
+        keybindings.execute_action('filter_all_buffers', {
+          state = state_orgfiles,
+          opts = {},
+          refresh_fn = function() end,
+        })
+        assert.is_table(state_orgfiles:get_filter('current_files'))
+      end)
+    end)
+
+    describe('filter_headline_file', function()
+      it('should set current_files to selected headline file', function()
+        local state = PickerState:new('headlines')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          selected_entry = { filename = '/path/to/selected.org' },
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('filter_headline_file', context)
+
+        assert.is_true(refresh_called)
+        assert.are.same({ '/path/to/selected.org' }, state:get_filter('current_files'))
+      end)
+
+      it('should do nothing in orgfiles mode', function()
+        local state = PickerState:new('orgfiles')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          selected_entry = { filename = '/path/to/selected.org' },
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('filter_headline_file', context)
+
+        assert.is_false(refresh_called)
+        assert.is_nil(state:get_filter('current_files'))
+      end)
+
+      it('should do nothing without selected_entry', function()
+        local state = PickerState:new('headlines')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          selected_entry = nil,
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('filter_headline_file', context)
+
+        assert.is_false(refresh_called)
+        assert.is_nil(state:get_filter('current_files'))
+      end)
+    end)
+
+    describe('drop_filters', function()
+      it('should clear all filters', function()
+        local state = PickerState:new('headlines')
+        state:set_filter('tag_query', 'work')
+        state:set_filter('current_files', { '/path/to/file.org' })
+        state:set_filter('only_current_file', true)
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('drop_filters', context)
+
+        assert.is_true(refresh_called)
+        assert.is_nil(state:get_filter('tag_query'))
+        assert.are.same({}, state:get_filter('current_files'))
+        assert.is_nil(state:get_filter('only_current_file'))
+      end)
+
+      it('should work when no filters are set', function()
+        local state = PickerState:new('headlines')
+        local refresh_called = false
+
+        local context = {
+          state = state,
+          opts = {},
+          refresh_fn = function()
+            refresh_called = true
+          end,
+        }
+
+        keybindings.execute_action('drop_filters', context)
+
+        assert.is_true(refresh_called)
+        -- Should still set empty table for current_files
+        assert.are.same({}, state:get_filter('current_files'))
+      end)
+
+      it('should work in both modes', function()
+        -- Test headlines mode
+        local state_headlines = PickerState:new('headlines')
+        state_headlines:set_filter('tag_query', 'test')
+        keybindings.execute_action('drop_filters', {
+          state = state_headlines,
+          opts = {},
+          refresh_fn = function() end,
+        })
+        assert.is_nil(state_headlines:get_filter('tag_query'))
+
+        -- Test orgfiles mode
+        local state_orgfiles = PickerState:new('orgfiles')
+        state_orgfiles:set_filter('current_files', { '/path/to/file.org' })
+        keybindings.execute_action('drop_filters', {
+          state = state_orgfiles,
+          opts = {},
+          refresh_fn = function() end,
+        })
+        assert.are.same({}, state_orgfiles:get_filter('current_files'))
+      end)
+    end)
   end)
 end)
