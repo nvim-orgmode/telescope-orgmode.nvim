@@ -117,13 +117,15 @@ describe('[Integration: lib/operations]', function()
       local callback_error = nil
 
       local success, err = pcall(function()
-        internal_headline.file:update(function()
-          callback_executed = true
-          -- Internal object's methods work correctly in callback
-          local range_in_callback = internal_headline:get_range()
-          assert.is_not_nil(range_in_callback, 'get_range() should work in callback')
-          assert.is_number(range_in_callback.start_line, 'Should have start_line')
-        end):wait()
+        internal_headline.file
+          :update(function()
+            callback_executed = true
+            -- Internal object's methods work correctly in callback
+            local range_in_callback = internal_headline:get_range()
+            assert.is_not_nil(range_in_callback, 'get_range() should work in callback')
+            assert.is_number(range_in_callback.start_line, 'Should have start_line')
+          end)
+          :wait()
       end)
 
       assert.is_true(callback_executed, 'Callback should have executed')
