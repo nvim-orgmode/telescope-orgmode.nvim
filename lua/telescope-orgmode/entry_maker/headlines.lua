@@ -3,6 +3,26 @@ local org = require('telescope-orgmode.org')
 local entry_display = require('telescope.pickers.entry_display')
 local highlights = require('telescope-orgmode.lib.highlights')
 
+---Get location text by preference order (for width calculation)
+---@param headline table Headline data
+---@param preference string[] Priority order
+---@return string location_text
+local function get_location_text(headline, preference)
+  preference = preference or { 'category', 'filename' }
+
+  for _, key in ipairs(preference) do
+    if key == 'category' and headline.category then
+      return headline.category
+    elseif key == 'filename' then
+      return vim.fn.fnamemodify(headline.filename, ':t')
+    elseif key == 'title' and headline.title then
+      return headline.title
+    end
+  end
+
+  return 'unknown'
+end
+
 ---@param headline_results { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
 ---@return OrgHeadlineEntry[], { location: number, tags: number, todo: number, priority: number }
 local function index_headlines(headline_results, opts)
@@ -10,8 +30,9 @@ local function index_headlines(headline_results, opts)
   local widths = { location = 0, tags = 0, todo = 0, priority = 0 }
 
   for _, headline in ipairs(headline_results) do
-    -- Calculate max widths from result set
-    local location = string.format('%s:%i', vim.fn.fnamemodify(headline.filename, ':t'), headline.line_number)
+    -- Calculate max widths from result set (using location preference)
+    local location_text = get_location_text(headline, opts.location_preference)
+    local location = string.format('%s:%i', location_text, headline.line_number)
     widths.location = math.max(widths.location, vim.fn.strdisplaywidth(location))
 
     if #headline.all_tags > 0 then
