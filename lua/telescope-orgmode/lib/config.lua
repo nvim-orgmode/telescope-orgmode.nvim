@@ -22,6 +22,9 @@ M.defaults = {
   show_priority = true,
   location_max_width = 15,
   tags_max_width = 15,
+  -- Location column format preference (ordered priority)
+  -- First available value in list will be displayed
+  location_preference = { 'category', 'filename' },
 }
 
 -- Picker-specific defaults
@@ -89,6 +92,18 @@ function M.validate(config)
 
   if config.tags_max_width and (type(config.tags_max_width) ~= 'number' or config.tags_max_width < 1) then
     return false, 'tags_max_width must be a positive number'
+  end
+
+  if config.location_preference then
+    if type(config.location_preference) ~= 'table' then
+      return false, 'location_preference must be a table'
+    end
+
+    for _, key in ipairs(config.location_preference) do
+      if key ~= 'category' and key ~= 'filename' and key ~= 'title' then
+        return false, 'location_preference values must be: category, filename, or title'
+      end
+    end
   end
 
   return true, nil

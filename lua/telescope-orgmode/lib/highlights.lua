@@ -47,6 +47,27 @@ function M.pad(str, width)
   return str
 end
 
+---Get location text by preference order
+---@param headline table Headline data
+---@param filename string File path
+---@param preference string[] Priority order for location display
+---@return string location Location text
+local function get_location_by_preference(headline, filename, preference)
+  preference = preference or { 'category', 'filename' }
+
+  for _, key in ipairs(preference) do
+    if key == 'category' and headline.category then
+      return headline.category
+    elseif key == 'filename' then
+      return vim.fn.fnamemodify(filename, ':t')
+    elseif key == 'title' and headline.title then
+      return headline.title
+    end
+  end
+
+  return 'unknown'
+end
+
 ---Build headline display segments (framework-agnostic data structure)
 ---Returns both segments for display and plain text for searching
 ---@param headline table Headline data from entry
@@ -59,9 +80,10 @@ function M.get_headline_segments(headline, filename, opts)
   local text_parts = {}
   local widths = opts.widths or {}
 
-  -- Location (filename:line) - dimmed, padded
+  -- Location - dimmed, padded (uses preference: category > filename by default)
   if opts.show_location and widths.location and widths.location > 0 then
-    local location = string.format('%s:%i', vim.fn.fnamemodify(filename, ':t'), headline.line_number)
+    local location_text = get_location_by_preference(headline, filename, opts.location_preference)
+    local location = string.format('%s:%i', location_text, headline.line_number)
     local max_width = opts.location_max_width and math.min(widths.location, opts.location_max_width) or widths.location
     table.insert(segments, { M.pad(location, max_width) .. '  ', 'Comment' })
     table.insert(text_parts, location)
