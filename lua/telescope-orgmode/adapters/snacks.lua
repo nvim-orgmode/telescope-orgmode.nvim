@@ -252,8 +252,7 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
 
   -- Build title with filter context
   local base_title = picker_config.prompt_titles[mode]
-  local context = state:get_title_context()
-  local full_title = context ~= '' and (base_title .. ' ' .. context) or base_title
+  local full_title = state:get_full_title(base_title)
 
   local picker_opts = {
     title = full_title,

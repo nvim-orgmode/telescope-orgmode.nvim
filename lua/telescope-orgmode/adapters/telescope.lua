@@ -105,8 +105,8 @@ local function toggle_current_file_action(state, opts)
     -- Refresh function for keybindings library
     local function refresh(updated_state)
       local new_finder = create_finder(updated_state, opts)
-      local title = opts.prompt_titles.headlines
-      update_picker(prompt_bufnr, new_finder, title)
+      local full_title = updated_state:get_full_title(opts.prompt_titles.headlines)
+      update_picker(prompt_bufnr, new_finder, full_title)
     end
 
     -- Execute action using keybindings library
@@ -179,8 +179,7 @@ function M.search_headings(user_opts)
 
   -- Build title with filter context
   local base_title = opts.prompt_titles[state:get_current()]
-  local context = state:get_title_context()
-  local full_title = context ~= '' and (base_title .. ' ' .. context) or base_title
+  local full_title = state:get_full_title(base_title)
 
   -- Create and launch picker
   pickers
@@ -251,8 +250,7 @@ function M.refile_heading(user_opts)
 
   -- Build title with filter context
   local base_title = opts.prompt_titles[state:get_current()]
-  local context = state:get_title_context()
-  local full_title = context ~= '' and (base_title .. ' ' .. context) or base_title
+  local full_title = state:get_full_title(base_title)
 
   -- Create and launch picker
   pickers
@@ -307,8 +305,7 @@ function M.insert_link(user_opts)
 
   -- Build title with filter context
   local base_title = opts.prompt_titles[state:get_current()]
-  local context = state:get_title_context()
-  local full_title = context ~= '' and (base_title .. ' ' .. context) or base_title
+  local full_title = state:get_full_title(base_title)
 
   -- Create and launch picker
   pickers

@@ -8,10 +8,9 @@ local M = {}
 ---@param entry table Entry from any picker framework
 ---@return table|nil destination OrgApiHeadline or OrgApiFile
 function M.entry_to_destination(entry)
-  -- Normalize entry to standard format
-  local normalized = entry_normalize.normalize_entry(entry)
-  local filename = normalized.filename
-  local headline_data = normalized.headline
+  -- Use entry_normalize.get_filename() which handles both .filename and .file fields
+  local filename = entry_normalize.get_filename(entry)
+  local headline_data = entry_normalize.get_headline(entry)
 
   if headline_data then
     -- Headline destination

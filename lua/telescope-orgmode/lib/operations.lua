@@ -57,7 +57,9 @@ function M.insert_link(entry, opts)
     destination = api_file
   end
 
-  local promise = org.insert_link(destination)
+  -- Get link string from API object
+  local link_location = destination:get_link()
+  local promise = org.insert_link(link_location)
   local success, result = pcall(function()
     return promise:wait()
   end)

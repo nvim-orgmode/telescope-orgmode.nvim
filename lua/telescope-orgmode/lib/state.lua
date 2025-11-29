@@ -77,4 +77,13 @@ function PickerState:get_title_context()
   return table.concat(parts, ' ')
 end
 
+---Construct full picker title with filter context
+---Framework-agnostic title construction for adapter use
+---@param base_title string Base title without context (e.g., "Org Headlines")
+---@return string Full title with context (e.g., "Org Headlines [file:todo.org]")
+function PickerState:get_full_title(base_title)
+  local context = self:get_title_context()
+  return context ~= '' and (base_title .. ' ' .. context) or base_title
+end
+
 return PickerState

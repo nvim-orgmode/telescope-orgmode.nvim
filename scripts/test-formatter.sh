@@ -206,13 +206,13 @@ print_failure_summary() {
   for i in "${!failed_tests[@]}"; do
     echo -e "\n${RED}${BOLD}[$((i + 1))]${RESET} ${failed_tests[$i]}"
 
-    if [[ -n "${failed_sections[$i]}" ]]; then
+    if [[ -n "${failed_sections[$i]:-}" ]]; then
       echo -e "    ${BLUE}Section:${RESET} ${failed_sections[$i]}"
     fi
 
     echo -e "    ${BLUE}File:${RESET} ${failed_files[$i]}"
 
-    if [[ -n "${failed_errors[$i]}" ]]; then
+    if [[ -n "${failed_errors[$i]:-}" ]]; then
       echo -e "    ${YELLOW}Error:${RESET}"
       echo -e "${failed_errors[$i]}" | sed 's/^/      /'
     fi

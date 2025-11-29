@@ -146,7 +146,7 @@ describe('[Integration: lib/operations]', function()
   end)
 
   describe('insert_link', function()
-    it('should work with real OrgApiHeadline objects', function()
+    it('should call get_link() on OrgApiHeadline objects', function()
       -- Setup
       local file = helpers.load_file_sync({
         '* Headline One',
@@ -155,36 +155,28 @@ describe('[Integration: lib/operations]', function()
 
       helpers.setup_orgmode_mock({ file })
 
+      -- Get real API headline
       local headline = org_module.get_api_headline(file.filename, 1)
       assert.is_not_nil(headline, 'Failed to get headline')
 
-      -- Create entry in telescope-orgmode format
-      local entry = {
-        filename = file.filename,
-        value = {
-          headline = {
-            line_number = 1,
-          },
-        },
-      }
-
-      -- Test insert_link with real API objects
-      local result = operations.insert_link(entry, {})
-      assert.is_not_nil(result or true, 'insert_link should not crash')
+      -- Verify get_link() returns a string (not nil or object)
+      local link = headline:get_link()
+      assert.is_string(link, 'get_link() should return a string')
+      assert.is_not_nil(link:match('^file:'), 'Link should start with file: protocol')
     end)
 
-    it('should handle file links', function()
+    it('should call get_link() on OrgApiFile objects', function()
       local file = helpers.load_file_sync({ '* Content' })
       helpers.setup_orgmode_mock({ file })
 
-      -- Entry without headline (links to file)
-      local entry = {
-        filename = file.filename,
-        value = {},
-      }
+      -- Get real API file
+      local api_file = org_module.get_api_file(file.filename)
+      assert.is_not_nil(api_file, 'Failed to get API file')
 
-      local result = operations.insert_link(entry, {})
-      assert.is_not_nil(result or true, 'File link should not crash')
+      -- Verify get_link() returns a string
+      local link = api_file:get_link()
+      assert.is_string(link, 'get_link() should return a string')
+      assert.is_not_nil(link:match('^file:'), 'Link should start with file: protocol')
     end)
   end)
 
