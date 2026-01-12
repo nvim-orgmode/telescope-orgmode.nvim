@@ -43,18 +43,16 @@ function M.execute_refile(source_headline, destination_entry)
   end
 end
 
----Execute insert link workflow
+---Execute insert link workflow (async)
 ---@param link_entry table Picker entry to link to
----@return boolean success
----@return string message
+---@return table|nil promise OrgPromise, or nil if entry invalid
 function M.execute_insert_link(link_entry)
   local link_target = M.entry_to_destination(link_entry)
   if not link_target then
-    return false, 'Could not find link target'
+    return nil
   end
 
-  local success = operations.insert_link(link_target)
-  return success, success and 'Link inserted successfully' or 'Failed to insert link'
+  return operations.insert_link(link_target)
 end
 
 ---Execute navigate workflow

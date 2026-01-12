@@ -54,4 +54,23 @@ function M.search_tags(opts)
   return get_adapter().search_tags(opts)
 end
 
+---Set the active adapter at runtime
+---@param name 'telescope'|'snacks'
+function M.set_adapter(name)
+  adapter_name = name
+  active_adapter = nil -- Force reload on next call
+end
+
+---Toggle between telescope and snacks adapter
+function M.toggle_adapter()
+  M.set_adapter(adapter_name == 'telescope' and 'snacks' or 'telescope')
+  vim.notify('telescope-orgmode: ' .. adapter_name, vim.log.levels.INFO)
+end
+
+---Get the current adapter name
+---@return string
+function M.get_adapter_name()
+  return adapter_name
+end
+
 return M

@@ -190,7 +190,7 @@ local function refile_action(source_headline, item)
   vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.WARN)
 end
 
----Insert link to selected item
+---Insert link to selected item (async)
 ---@param item table Selected item
 local function insert_link_action(item)
   -- Snacks passes the item directly, not wrapped
@@ -202,9 +202,24 @@ local function insert_link_action(item)
     return
   end
 
-  -- Use lib_actions for insert link workflow
-  local success, message = lib_actions.execute_insert_link(entry)
-  vim.notify(message, success and vim.log.levels.INFO or vim.log.levels.ERROR)
+  local promise = lib_actions.execute_insert_link(entry)
+  if not promise then
+    vim.notify('Could not find link target', vim.log.levels.ERROR)
+    return
+  end
+
+  -- Handle async result
+  promise
+    :next(function(result)
+      if result then
+        vim.notify('Link inserted successfully', vim.log.levels.INFO)
+      else
+        vim.notify('Link insertion cancelled', vim.log.levels.INFO)
+      end
+    end)
+    :catch(function(err)
+      vim.notify('Failed to insert link: ' .. tostring(err), vim.log.levels.ERROR)
+    end)
 end
 
 ---Create new picker with current state
