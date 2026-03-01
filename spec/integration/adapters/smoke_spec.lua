@@ -3,6 +3,8 @@
 
 local helpers = require('spec.e2e.adapters.helpers')
 
+local has_snacks = pcall(require, 'snacks')
+
 describe('Adapter Smoke Tests', function()
   after_each(function()
     helpers.close_all_pickers()
@@ -24,7 +26,7 @@ describe('Adapter Smoke Tests', function()
   end)
 
   describe('Basic Initialization', function()
-    it('should create Snacks picker without crash', function()
+    (has_snacks and it or pending)('should create Snacks picker without crash', function()
       -- Create a temporary org file so we have content
       local test_file = helpers.create_temp_org_file({
         '* Test Headline 1',
@@ -68,7 +70,7 @@ describe('Adapter Smoke Tests', function()
   end)
 
   describe('Adapter Selection', function()
-    it('should respect adapter parameter in options', function()
+    (has_snacks and it or pending)('should respect adapter parameter in options', function()
       -- Create a temporary org file
       local test_file = helpers.create_temp_org_file({
         '* Test Headline',
