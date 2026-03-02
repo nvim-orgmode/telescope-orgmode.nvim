@@ -66,6 +66,7 @@ function M.navigate_to(entry)
     return false
   end
 
+  vim.cmd("normal! m'")
   vim.cmd('edit ' .. vim.fn.fnameescape(filename))
   if lnum then
     vim.api.nvim_win_set_cursor(0, { lnum, 0 })
