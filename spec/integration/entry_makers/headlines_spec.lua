@@ -1,6 +1,6 @@
 local OrgFile = require('orgmode.files.file')
 local org = require('telescope-orgmode.org')
-local highlights = require('telescope-orgmode.highlights')
+local highlights = require('telescope-orgmode.lib.highlights')
 local headlines_entry_maker = require('telescope-orgmode.entry_maker.headlines')
 
 -- Use [Section Name] format in describe() for grouped test output
@@ -76,16 +76,15 @@ describe('[Entry Maker: Headlines]', function()
     end)
 
     it('should return correct highlight groups for priorities', function()
-      -- Priority A gets special highlight
+      -- Per-priority highlight groups
       local hl = highlights.get_priority_highlight('A')
       assert.are.same('@org.priority.highest', hl)
 
-      -- Other priorities return nil (use default)
       hl = highlights.get_priority_highlight('B')
-      assert.is_nil(hl)
+      assert.are.same('@org.priority.default', hl)
 
       hl = highlights.get_priority_highlight('C')
-      assert.is_nil(hl)
+      assert.are.same('@org.priority.lowest', hl)
 
       hl = highlights.get_priority_highlight(nil)
       assert.is_nil(hl)

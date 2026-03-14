@@ -171,6 +171,27 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
   local picker_config = config:new(picker_type, base_opts)
   local mode = state:get_current()
 
+  local items = create_finder(state, picker_config)
+
+  -- Allow empty items array - Snacks handles it gracefully and user can still adjust filters
+
+  -- Transform keybindings to Snacks format
+  local keys = transform_keybindings({ 'toggle_mode', 'toggle_current_file', 'open_tag_picker' }, {
+    toggle_mode = function(picker)
+      toggle_mode(state, picker_type, base_opts, picker)
+    end,
+    toggle_current_file = function(picker)
+      toggle_current_file(state, picker_type, base_opts, picker)
+    end,
+    open_tag_picker = function(picker)
+      open_tag_picker(picker, base_opts)
+    end,
+  })
+
+  -- Build title with filter context
+  local base_title = picker_config.prompt_titles[mode]
+  local full_title = state:get_full_title(base_title)
+
   local picker_opts = {
     title = picker_config.prompt_titles[mode],
     items = create_finder(state, picker_config),

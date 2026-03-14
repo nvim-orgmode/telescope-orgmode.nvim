@@ -1,7 +1,7 @@
 require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
 local entry_display = require('telescope.pickers.entry_display')
-local highlights = require('telescope-orgmode.highlights')
+local highlights = require('telescope-orgmode.lib.highlights')
 
 ---@param headline_results { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
 ---@return OrgHeadlineEntry[], { location: number, tags: number, todo: number, priority: number }
@@ -14,8 +14,8 @@ local function index_headlines(headline_results, opts)
     local location = string.format('%s:%i', vim.fn.fnamemodify(headline.filename, ':t'), headline.line_number)
     widths.location = math.max(widths.location, vim.fn.strdisplaywidth(location))
 
-    local tags = table.concat(headline.all_tags, ':')
-    if #tags > 0 then
+    if #headline.all_tags > 0 then
+      local tags = table.concat(headline.all_tags, ':')
       widths.tags = math.max(widths.tags, vim.fn.strdisplaywidth(tags))
     end
 

@@ -1,15 +1,26 @@
 local M = {}
 
----Get highlight group for TODO state
----@param todo_type string|nil TODO type ('TODO', 'DONE', etc.)
+---Get highlight group for TODO keyword
+---Uses orgmode's highlight map for custom keyword support (WAITING, NEXT, etc.)
+---@param todo_value string|nil The TODO keyword (e.g., "TODO", "DONE", "WAITING")
+---@param todo_type 'TODO'|'DONE'|'' The TODO type
 ---@return string|nil highlight_group Neovim highlight group name
-function M.get_todo_highlight(todo_type)
-  if todo_type == 'TODO' then
-    return '@org.keyword.todo'
-  elseif todo_type == 'DONE' then
-    return '@org.keyword.done'
+function M.get_todo_highlight(todo_value, todo_type)
+  if not todo_value then
+    return nil
   end
-  return nil
+
+  -- Get orgmode's highlight mapping (includes custom keywords)
+  local ok, hl_mod = pcall(require, 'orgmode.colors.highlights')
+  if not ok then
+    -- Orgmode not loaded - use basic defaults
+    return todo_type == 'DONE' and '@org.keyword.done' or '@org.keyword.todo'
+  end
+
+  local hl_map = hl_mod.get_agenda_hl_map()
+
+  -- Return custom highlight if defined, otherwise default based on type
+  return hl_map[todo_value] or (todo_type == 'DONE' and '@org.keyword.done') or '@org.keyword.todo'
 end
 
 ---Get highlight group for headline level
@@ -22,13 +33,23 @@ function M.get_level_highlight(level)
 end
 
 ---Get highlight group for priority
----@param priority string|nil Priority ('A', 'B', 'C')
----@return string highlight_group
+---@param priority string|nil The priority letter (e.g., "A", "B", "C")
+---@return string|nil highlight_group Neovim highlight group name
 function M.get_priority_highlight(priority)
-  if priority then
-    return '@org.priority'
+  if not priority then
+    return nil
   end
-  return 'Normal'
+
+  if priority == 'A' then
+    return '@org.priority.highest'
+  elseif priority == 'B' then
+    return '@org.priority.default'
+  elseif priority == 'C' then
+    return '@org.priority.lowest'
+  end
+
+  -- Unknown priority letter
+  return '@org.priority.default'
 end
 
 ---Pad or truncate string to exact width
@@ -71,7 +92,7 @@ function M.get_headline_segments(headline, filename, opts)
   if opts.show_tags and widths.tags and widths.tags > 0 then
     local max_width = opts.tags_max_width and math.min(widths.tags, opts.tags_max_width) or widths.tags
     if #headline.all_tags > 0 then
-      local tags = ':' .. table.concat(headline.all_tags, ':') .. ':'
+      local tags = table.concat(headline.all_tags, ':')
       table.insert(segments, { M.pad(tags, max_width) .. ' ', '@org.tag' })
       table.insert(text_parts, tags)
     else
@@ -83,7 +104,7 @@ function M.get_headline_segments(headline, filename, opts)
   -- TODO state - colored based on type, padded (ALWAYS reserve space if show_todo_state is true)
   if opts.show_todo_state and widths.todo and widths.todo > 0 then
     if headline.todo_value then
-      local hl = M.get_todo_highlight(headline.todo_type)
+      local hl = M.get_todo_highlight(headline.todo_value, headline.todo_type)
       table.insert(segments, { M.pad(headline.todo_value, widths.todo) .. ' ', hl })
       table.insert(text_parts, headline.todo_value)
     else
