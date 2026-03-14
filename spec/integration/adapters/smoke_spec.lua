@@ -5,7 +5,7 @@ local helpers = require('spec.e2e.adapters.helpers')
 
 local has_snacks = pcall(require, 'snacks')
 
-describe('Adapter Smoke Tests', function()
+describe('[Integration: Adapter Smoke Tests]', function()
   after_each(function()
     helpers.close_all_pickers()
     helpers.close_all_buffers()

@@ -1,5 +1,7 @@
 # telescope-orgmode.nvim
 
+[![tests](https://github.com/nvim-orgmode/telescope-orgmode.nvim/actions/workflows/tests.yml/badge.svg)](https://github.com/nvim-orgmode/telescope-orgmode.nvim/actions/workflows/tests.yml)
+
 Fuzzy search, refile, and link insertion for [orgmode](https://github.com/nvim-orgmode/orgmode) with [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) or [snacks.nvim](https://github.com/folke/snacks.nvim) picker.
 
 ## Features
