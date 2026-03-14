@@ -188,7 +188,21 @@ end
 ---@param filename string
 ---@return table|nil
 function M.get_api_file(filename)
-  return OrgApi.load(filename)
+  -- Handle invalid input
+  if not filename or filename == '' then
+    return nil
+  end
+
+  local success, api_file = pcall(OrgApi.load, filename)
+  if not success then
+    return nil
+  end
+
+  if not api_file then
+    return nil
+  end
+
+  return api_file
 end
 
 --- Intra-file links are simpler and work without IDs
