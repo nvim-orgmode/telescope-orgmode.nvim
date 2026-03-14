@@ -56,7 +56,7 @@ Press =\th= (backslash-t-h) to open the headlines picker and begin!
 
    If filtering works, press =cit= to mark as PASS
 
-** UNTESTED Test 5: Insert Link
+** PASS Test 5: Insert Link
    INSTRUCTIONS:
    1. Open a new org file or buffer
    2. Press =\ti= to open insert link picker

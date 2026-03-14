@@ -2,6 +2,9 @@
 #+category: personal
 
 * TODO [#A] Book dentist appointment                               :personal:health:
+  :PROPERTIES:
+  :ID: 90a1713d-0529-4138-8ed6-6fe3f525baa2
+  :END:
   Overdue since January.
 
 * DONE Grocery shopping                                            :personal:errands:

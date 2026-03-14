@@ -1,2 +1,3 @@
 vendor/
 scripts/test-fixture/.repro/
+out/

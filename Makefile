@@ -1,4 +1,4 @@
-.PHONY: help test test-plain test-file verify-keybindings verify-keybindings-telescope verify-keybindings-snacks format lint lint-sh clean
+.PHONY: help test test-plain test-file verify-keybindings verify-keybindings-telescope verify-keybindings-snacks demo demo-upload release format lint lint-sh clean
 
 help: ## Show available targets
 	@egrep '^(.+)\:\ .*##\ (.+)' $(MAKEFILE_LIST) | sed 's/:.*##/#/' | column -t -c 2 -s '#'
@@ -28,6 +28,27 @@ manual-test-snacks: ## Run self-guided manual test (Snacks adapter)
 
 e2e: ## Launch interactive test fixture (isolated, both adapters)
 	@cd scripts/test-fixture && nvim --clean -u init.lua notes/work.org
+
+demo: ## Record all demo videos with VHS
+	@mkdir -p out
+	@for tape in scripts/demo/*.tape; do \
+		./scripts/test-fixture/reset.sh >/dev/null; \
+		echo "Recording $$tape..."; \
+		vhs "$$tape"; \
+	done
+	@./scripts/test-fixture/reset.sh >/dev/null
+	@echo "Done! Videos in out/"
+
+demo-upload: ## Upload demo videos to GitHub release (usage: make demo-upload TAG=1.5.0)
+	@test -n "$(TAG)" || (echo "Usage: make demo-upload TAG=1.5.0" && exit 1)
+	@gh release upload $(TAG) out/*.webm --clobber
+	@echo "Uploaded demo videos to release $(TAG)"
+
+release: ## Create release (usage: make release TYPE=minor)
+	@./scripts/release.sh $(TYPE)
+
+demo-env: ## Launch interactive demo environment (tokyonight, snacks)
+	@nvim --clean -u scripts/demo/init.lua scripts/test-fixture/notes/work.org
 
 format: ## Format Lua code with stylua
 	@stylua lua/ spec/
