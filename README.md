@@ -1,22 +1,62 @@
 # telescope-orgmode.nvim
 
-Provides integration for [orgmode](https://github.com/nvim-orgmode/orgmode) and
-[org-roam.nvim](https://github.com/chipsenkbeil/org-roam.nvim) with
-[telescope.nvim](https://github.com/nvim-telescope/telescope.nvim).
+Fuzzy search, refile, and link insertion for [orgmode](https://github.com/nvim-orgmode/orgmode) with [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) or [snacks.nvim](https://github.com/folke/snacks.nvim) picker.
 
-## Demo
+## Features
 
-Jump to to any heading in `org_agenda_files` with `:Telescope orgmode search_headings`
+### Search Headlines
 
-[![asciicast](https://asciinema.org/a/Oko0GT32HS6JCpzuSznUG0D1D.svg)](https://asciinema.org/a/Oko0GT32HS6JCpzuSznUG0D1D)
+Jump to any heading in your `org_agenda_files`. You can filter by typing — the search matches against filename, tags, TODO state, and title.
 
-Refile heading from capture or current file under destination with `:Telescope orgmode refile_heading`
+https://github.com/user-attachments/assets/ea07829d-d80f-422d-b69b-2a42451dd5b8
 
-[![asciicast](https://asciinema.org/a/1X4oG6s5jQZrJJI3DfEzJU3wN.svg)](https://asciinema.org/a/1X4oG6s5jQZrJJI3DfEzJU3wN)
+### Search Org Files
+
+Press `<C-Space>` to switch to file-level search. Files with a `#+TITLE:` show the title instead of the filename.
+
+### Refile
+
+Move a headline under a different parent. Position your cursor on a headline, open the refile picker, and pick the destination.
+
+https://github.com/user-attachments/assets/497f3767-b679-49c6-8ed6-9928c75016ac
+
+### Tag Search
+
+Pick a tag, then browse the headlines that have it. `<C-t>` takes you back to the tag list.
+
+https://github.com/user-attachments/assets/289dd36a-e6b9-401a-b1cd-f5624405fc8d
+
+### Insert Link
+
+Search for a headline or file and insert an org link at the cursor.
+
+https://github.com/user-attachments/assets/938a13ee-4867-468a-b260-09406844994a
 
 ## Installation
 
-### With LazyVim (Telescope)
+### Snacks.picker
+
+```lua
+{
+  "nvim-orgmode/telescope-orgmode.nvim",
+  event = "VeryLazy",
+  dependencies = {
+    "nvim-orgmode/orgmode",
+    "folke/snacks.nvim",
+  },
+  config = function()
+    local tom = require("telescope-orgmode")
+    tom.setup({ adapter = "snacks" })
+
+    vim.keymap.set("n", "<leader>fh", tom.search_headings, { desc = "Org headlines" })
+    vim.keymap.set("n", "<leader>ft", tom.search_tags, { desc = "Org tags" })
+    vim.keymap.set("n", "<leader>r", tom.refile_heading, { desc = "Org refile" })
+    vim.keymap.set("n", "<leader>li", tom.insert_link, { desc = "Org insert link" })
+  end,
+}
+```
+
+### Telescope
 
 ```lua
 {
@@ -29,284 +69,83 @@ Refile heading from capture or current file under destination with `:Telescope o
   config = function()
     require("telescope").load_extension("orgmode")
 
-    vim.keymap.set("n", "<leader>r", require("telescope").extensions.orgmode.refile_heading)
-    vim.keymap.set("n", "<leader>fh", require("telescope").extensions.orgmode.search_headings)
-    vim.keymap.set("n", "<leader>li", require("telescope").extensions.orgmode.insert_link)
-    vim.keymap.set("n", "<leader>ot", require("telescope").extensions.orgmode.search_tags)
+    local ext = require("telescope").extensions.orgmode
+    vim.keymap.set("n", "<leader>fh", ext.search_headings, { desc = "Org headlines" })
+    vim.keymap.set("n", "<leader>ft", ext.search_tags, { desc = "Org tags" })
+    vim.keymap.set("n", "<leader>r", ext.refile_heading, { desc = "Org refile" })
+    vim.keymap.set("n", "<leader>li", ext.insert_link, { desc = "Org insert link" })
   end,
 }
 ```
 
-### With LazyVim (Snacks.picker)
+### Without plugin manager
 
 ```lua
-{
-  "nvim-orgmode/telescope-orgmode.nvim",
-  event = "VeryLazy",
-  dependencies = {
-    "nvim-orgmode/orgmode",
-    "folke/snacks.nvim",
-  },
-  config = function()
-    -- Setup with Snacks adapter
-    require('telescope-orgmode').setup({ adapter = 'snacks' })
+-- Telescope
+require("telescope").load_extension("orgmode")
 
-    -- Keymaps using direct module API
-    vim.keymap.set("n", "<leader>r", require('telescope-orgmode').refile_heading)
-    vim.keymap.set("n", "<leader>fh", require('telescope-orgmode').search_headings)
-    vim.keymap.set("n", "<leader>li", require('telescope-orgmode').insert_link)
-
-    vim.keymap.set("n", "<leader>ot", require('telescope-orgmode').search_tags)
-  end,
-}
+-- Snacks
+require("telescope-orgmode").setup({ adapter = "snacks" })
 ```
 
-### Without lazyvim
+## Keybindings
 
-You can setup the extension by doing:
-
-```lua
-require('telescope').load_extension('orgmode')
-```
-
-To replace the default refile prompt:
-
-```lua
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'org',
-  group = vim.api.nvim_create_augroup('orgmode_telescope_nvim', { clear = true }),
-  callback = function()
-    vim.keymap.set('n', '<leader>or', require('telescope').extensions.orgmode.refile_heading)
-  end,
-})
-```
-
-## Available commands
-
-```viml
-:Telescope orgmode search_headings
-:Telescope orgmode refile_heading
-:Telescope orgmode insert_link
-:Telescope orgmode search_tags
-```
-
-## Available functions
-
-```lua
-require('telescope').extensions.orgmode.search_headings
-require('telescope').extensions.orgmode.refile_heading
-require('telescope').extensions.orgmode.insert_link
-require('telescope').extensions.orgmode.search_tags
-```
-
-## Features
-
-### Search headlines
-
-Search and navigate to any headline across your org files with fuzzy matching.
-Headlines are sorted by most recently modified file by default. TODO states and
-priorities are displayed as columns and can be filtered in the search.
-
-**Keybindings:**
-
-- `<C-Space>`: Toggle between headline and org file search modes
-- `<C-f>`: Toggle between all headlines and current file only
-- `<C-t>`: Open tag picker for tag-based filtering
-
-The maximum headline level and column visibility can be [configured](#configuration).
-
-### Search org files
-
-Search through org files rather than individual headlines. When org files have
-a `#+TITLE:` property, it is used for display and filtering instead of the
-filename. This is particularly useful with
-[org-roam.nvim](https://github.com/chipsenkbeil/org-roam.nvim) for fuzzy
-searching roam nodes.
-
-**Keybindings:**
-
-- `<C-Space>`: Toggle back to headline search mode
-
-### Search by tags
-
-Tag-based navigation workflow for quickly filtering headlines by org tags.
-Shows all tags with occurrence counts (e.g., `:work: (42)`) sorted by
-frequency. The preview pane displays up to 50 headlines containing the
-selected tag. Selecting a tag opens the headline search pre-filtered by
-that tag, allowing further refinement.
-
-**Keybindings:**
-
-- `<C-s>`: Toggle sort mode (frequency ↔ alphabetical)
-- `<C-t>`: Return to headline search (preserves tag filter)
-- `<CR>`: Select tag and open filtered headline search
-
-The initial sort mode can be [configured](#tag-search-options).
+| Key | Action | Context |
+|-----|--------|---------|
+| `<C-Space>` | Toggle between headline and org file search | All pickers |
+| `<C-f>` | Toggle current file filter | Headlines |
+| `<C-t>` | Open tag picker / return to tag list | Headlines / Tags |
+| `<C-s>` | Toggle tag sort (frequency ↔ alphabetical) | Tags |
+| `<CR>` | Confirm selection | All |
 
 ## Configuration
 
-### Picker Framework Selection
+Pass options to `setup()` (Snacks) or `telescope.setup({ extensions = { orgmode = { ... } } })` (Telescope). You can also pass them per call.
 
-telescope-orgmode.nvim supports multiple picker frameworks through an adapter system.
-By default, it uses `telescope.nvim`, but you can also use `snacks.nvim` picker or other
-compatible frameworks.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `adapter` | string | `'telescope'` | `'telescope'` or `'snacks'` |
+| `max_depth` | number\|nil | nil | Max headline level (nil = all, 0 = files only) |
+| `show_location` | boolean | true | Show filename/category column |
+| `show_tags` | boolean | true | Show tags column |
+| `show_todo_state` | boolean | true | Show TODO state column |
+| `show_priority` | boolean | true | Show priority column |
+| `location_max_width` | number | 15 | Max width for location column |
+| `tags_max_width` | number | 15 | Max width for tags column |
 
-**Using Telescope (default)**:
+### Per-call examples
+
 ```lua
--- Load as Telescope extension
-require('telescope').load_extension('orgmode')
+-- Org files only
+tom.search_headings({ mode = "orgfiles" })
 
--- Use via Telescope extension API
-vim.keymap.set('n', '<leader>fh', require('telescope').extensions.orgmode.search_headings)
-vim.keymap.set('n', '<leader>r', require('telescope').extensions.orgmode.refile_heading)
-vim.keymap.set('n', '<leader>li', require('telescope').extensions.orgmode.insert_link)
+-- Current file only
+tom.search_headings({ only_current_file = true })
+
+-- Limit depth
+tom.refile_heading({ max_depth = 3 })
+
+-- Sort tags alphabetically
+tom.search_tags({ initial_sort = "alphabetical" })
 ```
 
-**Using Snacks.picker**:
-```lua
--- Setup with Snacks adapter
-require('telescope-orgmode').setup({ adapter = 'snacks' })
-
--- Use via direct module API
-vim.keymap.set('n', '<leader>fh', require('telescope-orgmode').search_headings)
-vim.keymap.set('n', '<leader>r', require('telescope-orgmode').refile_heading)
-vim.keymap.set('n', '<leader>li', require('telescope-orgmode').insert_link)
+## Architecture
 
 ```
-
-**Important Notes**:
-- When using Snacks adapter, use the direct module API (`require('telescope-orgmode')`), not the Telescope extension API
-
-**Adapter System Coverage**:
-- ✅ `search_headings` - Supports both Telescope and Snacks
-- ✅ `refile_heading` - Supports both Telescope and Snacks
-- ✅ `insert_link` - Supports both Telescope and Snacks
-- ✅ `search_tags` - Supports both Telescope and Snacks
-
-**Benefits of the adapter system**:
-- Same API regardless of picker framework
-- All features work identically (toggle modes, filters, refile, etc.)
-- Choose based on your preference or existing setup
-- Framework-agnostic business logic ensures consistent behavior
-
-**Available keybindings** (work in both frameworks):
-- `<C-Space>`: Toggle between headline and org file search modes
-- `<C-f>`: Toggle between all headlines and current file only (headlines mode)
-
-### Maximum headline level
-
-You can limit the maximum headline level included in the search. `nil` means
-unlimited level, `0` means only search for whole org files. The latter is
-equivalent with [org file search mode](#search-org-files).
-
-To enable the configuration for all commands, pass the option to the setup
-function of telescope:
-
-```lua
-require('telescope').setup({
-    extensions = {
-        orgmode = {
-            max_depth = 3
-        }
-    }
-})
+lua/telescope-orgmode/
+├── adapters/        # Telescope & Snacks implementations
+├── lib/             # Shared logic (actions, config, state, filters)
+├── entry_maker/     # Headline/file → picker entry conversion
+├── org.lua          # Orgmode API wrapper
+└── init.lua         # Public API, adapter routing
 ```
 
-For a particular command you can pass it directly in your key mapping:
+## Contributing
 
-```lua
-require('telescope').extensions.orgmode.search_headings({ max_depth = 3 })
-```
-
-### Column visibility
-
-All columns are shown by default. To selectively disable columns:
-
-```lua
-require('telescope').setup({
-    extensions = {
-        orgmode = {
-            show_location = false,
-            show_tags = false,
-            show_todo_state = false,
-            show_priority = false,
-        }
-    }
-})
-```
-
-### Column widths
-
-Maximum widths for location and tags columns:
-
-```lua
-require('telescope').setup({
-    extensions = {
-        orgmode = {
-            location_max_width = 15,
-            tags_max_width = 15,
-        }
-    }
-})
-```
-
-### Tag search options
-
-The tag search can be configured with an initial sort mode:
-
-```lua
--- Sort tags alphabetically by default
-vim.keymap.set("n", "<leader>ot", function()
-  require("telescope").extensions.orgmode.search_tags({ initial_sort = "alphabetical" })
-end)
-
--- Sort tags by frequency by default (default behavior)
-vim.keymap.set("n", "<leader>ot", function()
-  require("telescope").extensions.orgmode.search_tags({ initial_sort = "frequency" })
-end)
-```
-
-Tags are case-sensitive (`:work:` ≠ `:Work:`).
-
-### Custom keymaps
-
-You can customize the telescope picker keymaps by passing a `mappings` table:
-
-```lua
-require('telescope').extensions.orgmode.search_headings({
-  mappings = {
-    i = {
-      ['<C-l>'] = require('telescope-orgmode.actions').toggle_current_file_only,
-      ['<C-s>'] = require('telescope-orgmode.actions').toggle_headlines_orgfiles,
-    },
-    n = {
-      ['<C-l>'] = require('telescope-orgmode.actions').toggle_current_file_only,
-      ['<C-s>'] = require('telescope-orgmode.actions').toggle_headlines_orgfiles,
-    }
-  }
-})
-```
-
-You can also create key mappings for specific modes:
-
-```lua
--- Search only org files
-vim.keymap.set(
-  "n",
-  "<Leader>off",
-  function()
-    require('telescope').extensions.orgmode.search_headings({ mode = "orgfiles" })
-  end,
-  { desc = "Find org files"}
-)
-
--- Search headlines in current file only
-vim.keymap.set(
-  "n",
-  "<Leader>ofc",
-  function()
-    require('telescope').extensions.orgmode.search_headings({ only_current_file = true })
-  end,
-  { desc = "Find headlines in current file"}
-)
+```bash
+make test       # Run tests
+make format     # Format with StyLua
+make lint       # Check formatting
+make demo-env   # Interactive demo environment
+make demo       # Record demo videos (requires VHS)
 ```
