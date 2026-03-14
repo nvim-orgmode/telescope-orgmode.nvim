@@ -1,0 +1,138 @@
+#+TITLE: telescope-orgmode Manual Test
+#+DESCRIPTION: Self-guided interactive test for critical functionality
+
+* INSTRUCTIONS: How to Use This Test
+
+Welcome! This test verifies the core functionality of telescope-orgmode.
+
+** How This Works
+1. Each headline below is a test case with instructions
+2. Follow the instructions to test the functionality
+3. Check the checkbox [ ] when you complete each test
+4. Save and exit (:wq) when done
+5. The script will validate your results automatically
+
+** Keybinding Reference
+- =\th= - Open headlines picker
+- =\tr= - Open refile picker
+- =\ti= - Open insert link picker
+- =<C-Space>= - Toggle between headlines and orgfiles mode
+- =<C-f>= - Toggle current file filter
+- =<CR>= - Confirm selection
+
+** Ready to Start?
+Press =\th= (backslash-t-h) to open the headlines picker and begin!
+
+---
+
+* Test Cases
+
+** PASS Test 1: Open Headlines Picker
+   INSTRUCTIONS: Press =\th= to open the headlines picker
+
+   EXPECTED: Telescope/Snacks picker opens showing all headlines from all org files
+
+   If the picker opens correctly, press =cit= to mark as PASS
+
+** PASS Test 2: Toggle Mode with <C-Space>
+   INSTRUCTIONS:
+   1. Press =\th= to open headlines picker
+   2. Press =<C-Space>= in insert mode
+   3. Verify it switches to orgfiles mode
+   4. Press =<Esc>= then =<C-Space>= in normal mode
+   5. Verify it toggles back to headlines
+
+   EXPECTED: Mode toggles between headlines and orgfiles
+
+   If both toggles work, press =cit= to mark as PASS
+
+** PASS Test 3: Filter Current File
+   INSTRUCTIONS:
+   1. Press =\th= to open headlines picker
+   2. Press =<C-f>= to filter to current file only
+   3. Verify only headlines from THIS file are shown
+
+   EXPECTED: Picker shows only headlines from manual_test.org
+
+   If filtering works, press =cit= to mark as PASS
+
+** UNTESTED Test 5: Insert Link
+   INSTRUCTIONS:
+   1. Open a new org file or buffer
+   2. Press =\ti= to open insert link picker
+   3. Select any headline
+   4. Press =<CR>=
+
+   EXPECTED: A link is inserted at cursor position
+
+   If link insertion works, press =cit= to mark as PASS
+
+** UNTESTED Test 6: Navigate to Headline
+   INSTRUCTIONS:
+   1. Press =\th= to open headlines picker
+   2. Select any headline from another file
+   3. Press =<CR>= to navigate
+
+   EXPECTED: Neovim jumps to the selected headline in its file
+
+   If navigation works, press =cit= to mark as PASS
+
+---
+
+* Refile Destination
+  This is where "Test 4" should be refiled to.
+
+** After Test 4, verify this headline appears here:
+   The script will automatically verify if Test 4 was refiled correctly
+
+---
+** PASS Test 4: Refile This Headline → Refile Destination          :refile_test:
+   INSTRUCTIONS:
+   1. Position cursor on this headline
+   2. Press =\tr= to open refile picker
+   3. Select "Refile Destination" below
+   4. Press =<CR>= to refile
+
+   EXPECTED: This headline moves under "* Refile Destination"
+
+   **DO NOT mark this test - the script will validate the refile automatically**
+
+** UNTESTED Test 4: Refile This Headline → Refile Destination :refile_test:
+   INSTRUCTIONS:
+   1. Position cursor on this headline
+   2. Press =\tr= to open refile picker
+   3. Select "Refile Destination" below
+   4. Press =<CR>= to refile
+
+   EXPECTED: This headline moves under "* Refile Destination"
+
+   **DO NOT mark this test - the script will validate the refile automatically**
+
+* Test Results Summary
+
+** Automated Checks (Script validates these)
+- Refile successful: Test 4 moved to Refile Destination
+- Checkboxes marked: Count of [X] vs [ ]
+
+** Manual Checks (You verify these)
+- Total tests completed: [0/7]
+- Visual verification: Everything looked correct?
+- Performance: No lag or crashes?
+
+---
+
+* Additional Org Headlines for Testing
+
+** TODO Sample Task 1 :work:urgent:
+   Some content for testing headline selection and filtering
+
+** DONE Sample Task 2 :personal:
+   Completed task for variety in test data
+
+** IN-PROGRESS Sample Task 3 :work:
+   Another headline for refile and link testing
+
+** TODO Nested Structure
+*** TODO Subtask 1
+*** DONE Subtask 2
+*** TODO Subtask 3
