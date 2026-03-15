@@ -13,6 +13,7 @@
 ---@field file OrgApiFile
 ---@field filename string
 ---@field headline OrgApiHeadline
+---@field properties table<string, string>
 
 ---@class OrgFileEntry
 ---@field file OrgApiFile

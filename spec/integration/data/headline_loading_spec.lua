@@ -165,6 +165,87 @@ describe('[Data: Headline Loading]', function()
     end)
   end)
 
+  describe('property loading', function()
+    it('loads properties from headlines when show_properties is set', function()
+      local file = load_file_sync({
+        '* Task with properties',
+        ':PROPERTIES:',
+        ':ID: task-001',
+        ':EFFORT: 2h',
+        ':END:',
+        '* Task without properties',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local show_properties = {
+        { name = 'ID' },
+        { name = 'EFFORT' },
+      }
+
+      local headlines = org.load_headlines({ show_properties = show_properties })
+
+      assert.equals(2, #headlines)
+      -- First headline has property values
+      assert.equals('task-001', headlines[1].properties.ID)
+      assert.equals('2h', headlines[1].properties.EFFORT)
+      -- Second headline has empty strings for missing properties
+      assert.equals('', headlines[2].properties.ID)
+      assert.equals('', headlines[2].properties.EFFORT)
+    end)
+
+    it('returns empty properties table when show_properties is empty', function()
+      local file = load_file_sync({
+        '* Task',
+        ':PROPERTIES:',
+        ':ID: xyz',
+        ':END:',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local headlines = org.load_headlines({ show_properties = {} })
+
+      assert.is_table(headlines[1].properties)
+      assert.equals(0, vim.tbl_count(headlines[1].properties))
+    end)
+
+    it('loads properties via search-based loader consistently', function()
+      local file = load_file_sync({
+        '* Tagged task :work:',
+        ':PROPERTIES:',
+        ':EFFORT: 30min',
+        ':END:',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local show_properties = { { name = 'EFFORT' } }
+      local headlines = org.load_headlines_by_search('+work', { show_properties = show_properties })
+
+      assert.equals(1, #headlines)
+      assert.equals('30min', headlines[1].properties.EFFORT)
+    end)
+  end)
+
   describe('current file filtering', function()
     it('filters headlines to current file only', function()
       local file1 = load_file_sync({ '* File1 Headline' })

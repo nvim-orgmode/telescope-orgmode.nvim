@@ -22,7 +22,7 @@ local function get_location_text(headline, preference)
   return 'unknown'
 end
 
----@param headline_results { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
+---@param headline_results { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string, properties?: table<string, string> }[]
 ---@return OrgHeadlineEntry[], { location: number, tags: number, todo: number, priority: number }
 local function index_headlines(headline_results, opts)
   local results = {}
@@ -53,6 +53,20 @@ local function index_headlines(headline_results, opts)
     }
     table.insert(results, entry)
   end
+
+  -- Calculate property column widths (auto-hide: 0 width = column hidden)
+  local property_widths = {}
+  for _, prop_config in ipairs(opts.show_properties or {}) do
+    local max_w = 0
+    for _, headline in ipairs(headline_results) do
+      local val = (headline.properties or {})[prop_config.name] or ''
+      max_w = math.max(max_w, vim.fn.strdisplaywidth(val))
+    end
+    if max_w > 0 then
+      property_widths[prop_config.name] = math.min(max_w, prop_config.max_width or 15)
+    end
+  end
+  widths.properties = property_widths
 
   return results, widths
 end
@@ -90,6 +104,16 @@ M.make_entry = function(opts)
     table.insert(items, { width = location_width })
   end
 
+  -- Property columns (after location, before tags)
+  if opts.show_properties then
+    for _, prop_config in ipairs(opts.show_properties) do
+      local prop_width = (widths.properties or {})[prop_config.name]
+      if prop_width and prop_width > 0 then
+        table.insert(items, { width = prop_width })
+      end
+    end
+  end
+
   if opts.show_tags and widths.tags > 0 then
     local tags_width = opts.tags_max_width and math.min(widths.tags, opts.tags_max_width) or widths.tags
     table.insert(items, { width = tags_width })
@@ -118,6 +142,18 @@ M.make_entry = function(opts)
       table.insert(columns, { entry.location, 'TelescopeResultsComment' })
     elseif opts.show_location and widths.location > 0 then
       table.insert(columns, { '', '' })
+    end
+
+    -- Property columns (after location, before tags)
+    if opts.show_properties then
+      for _, prop_config in ipairs(opts.show_properties) do
+        local prop_width = (widths.properties or {})[prop_config.name]
+        if prop_width and prop_width > 0 then
+          local val = (entry.properties or {})[prop_config.name] or ''
+          local hl = prop_config.highlight or 'Comment'
+          table.insert(columns, { val, hl })
+        end
+      end
     end
 
     if opts.show_tags and entry.tags and #entry.tags > 0 then
@@ -172,6 +208,16 @@ M.make_entry = function(opts)
       table.insert(ordinal_parts, 1, '[#' .. headline.priority .. ']')
     end
 
+    -- Property values in ordinal for fuzzy search
+    if opts.show_properties and headline.properties then
+      for _, prop_config in ipairs(opts.show_properties) do
+        local val = headline.properties[prop_config.name]
+        if val and val ~= '' then
+          table.insert(ordinal_parts, val)
+        end
+      end
+    end
+
     local ordinal = table.concat(ordinal_parts, ' ')
 
     return {
@@ -187,6 +233,7 @@ M.make_entry = function(opts)
       todo_value = headline.todo_value,
       todo_type = headline.todo_type,
       priority = headline.priority,
+      properties = headline.properties,
     }
   end
 end

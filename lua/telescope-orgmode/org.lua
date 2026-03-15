@@ -54,8 +54,9 @@ function M.load_headlines(opts)
     return mtime_a > mtime_b
   end)
 
-  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
+  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string, properties?: table<string, string> }[]
   local results = {}
+  local load_properties = opts.show_properties and #opts.show_properties > 0
   for _, file in ipairs(files) do
     -- Skip archive files unless explicitly requested
     local headlines = opts.archived and file:get_headlines_including_archived() or file:get_headlines()
@@ -65,6 +66,14 @@ function M.load_headlines(opts)
       then
         local todo_keyword = headline:get_todo()
         local priority = headline:get_priority()
+
+        local properties = {}
+        if load_properties then
+          for _, prop_config in ipairs(opts.show_properties) do
+            properties[prop_config.name] = headline:get_property(prop_config.name) or ''
+          end
+        end
+
         table.insert(results, {
           filename = file.filename,
           title = headline:get_title(),
@@ -75,6 +84,7 @@ function M.load_headlines(opts)
           todo_value = todo_keyword,
           todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
           priority = (priority and priority ~= '') and priority or nil,
+          properties = properties,
         })
       end
     end
@@ -86,8 +96,8 @@ end
 --- Load headlines using orgmode Search API with tag-based filtering
 --- Returns same data structure as load_headlines() for consistency
 ---@param query string Orgmode search query (e.g., "+work", "tag1|tag2")
----@param opts { only_current_file?: boolean, archived?: boolean, max_depth?: number, original_file?: string }
----@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string }[]
+---@param opts { only_current_file?: boolean, archived?: boolean, max_depth?: number, original_file?: string, show_properties?: OrgmodePropertyConfig[] }
+---@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string, properties?: table<string, string> }[]
 function M.load_headlines_by_search(query, opts)
   local Search = require('orgmode.files.elements.search')
   local search = Search:new(query)
@@ -119,12 +129,21 @@ function M.load_headlines_by_search(query, opts)
   end)
 
   local results = {}
+  local load_properties = opts.show_properties and #opts.show_properties > 0
   for _, file in ipairs(files) do
     for _, headline in ipairs(file:apply_search(search, false)) do
       if not opts.max_depth or headline:get_level() <= opts.max_depth then
         if opts.archived or not headline:is_archived() then
           local todo_keyword = headline:get_todo()
           local priority = headline:get_priority()
+
+          local properties = {}
+          if load_properties then
+            for _, prop_config in ipairs(opts.show_properties) do
+              properties[prop_config.name] = headline:get_property(prop_config.name) or ''
+            end
+          end
+
           table.insert(results, {
             filename = file.filename,
             title = headline:get_title(),
@@ -135,6 +154,7 @@ function M.load_headlines_by_search(query, opts)
             todo_value = todo_keyword,
             todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
             priority = (priority and priority ~= '') and priority or nil,
+            properties = properties,
           })
         end
       end

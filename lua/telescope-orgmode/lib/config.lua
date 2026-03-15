@@ -1,5 +1,10 @@
 local M = {}
 
+---@class OrgmodePropertyConfig
+---@field name string Property name as in drawer (case-sensitive)
+---@field max_width number|nil Maximum column width (default 15)
+---@field highlight string|nil Neovim highlight group (default 'Comment')
+
 ---@class OrgmodePickerConfig
 ---@field max_depth number|nil
 ---@field archived boolean
@@ -10,6 +15,7 @@ local M = {}
 ---@field show_priority boolean
 ---@field location_max_width number
 ---@field tags_max_width number
+---@field show_properties OrgmodePropertyConfig[]
 
 -- Business logic defaults
 M.defaults = {
@@ -25,6 +31,7 @@ M.defaults = {
   -- Location column format preference (ordered priority)
   -- First available value in list will be displayed
   location_preference = { 'category', 'filename' },
+  show_properties = {},
 }
 
 -- Picker-specific defaults
@@ -102,6 +109,30 @@ function M.validate(config)
     for _, key in ipairs(config.location_preference) do
       if key ~= 'category' and key ~= 'filename' and key ~= 'title' then
         return false, 'location_preference values must be: category, filename, or title'
+      end
+    end
+  end
+
+  if config.show_properties then
+    if type(config.show_properties) ~= 'table' then
+      return false, 'show_properties must be a table'
+    end
+
+    for i, prop in ipairs(config.show_properties) do
+      if type(prop) ~= 'table' then
+        return false, string.format('show_properties[%d] must be a table', i)
+      end
+
+      if not prop.name or type(prop.name) ~= 'string' or prop.name == '' then
+        return false, string.format('show_properties[%d].name must be a non-empty string', i)
+      end
+
+      if prop.max_width ~= nil and (type(prop.max_width) ~= 'number' or prop.max_width < 1) then
+        return false, string.format('show_properties[%d].max_width must be a positive number', i)
+      end
+
+      if prop.highlight ~= nil and type(prop.highlight) ~= 'string' then
+        return false, string.format('show_properties[%d].highlight must be a string', i)
       end
     end
   end

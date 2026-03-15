@@ -122,4 +122,142 @@ describe('[Unit: lib/highlights]', function()
       assert.is_true(text:find('Test') ~= nil)
     end)
   end)
+
+  describe('property segment generation', function()
+    local function make_headline(overrides)
+      return vim.tbl_extend('force', {
+        title = 'Test',
+        level = 1,
+        todo_value = nil,
+        priority = nil,
+        all_tags = {},
+        line_number = 1,
+        properties = {},
+      }, overrides or {})
+    end
+
+    local function base_opts(overrides)
+      return vim.tbl_extend('force', {
+        show_location = false,
+        show_tags = false,
+        show_todo_state = false,
+        show_priority = false,
+        widths = {},
+      }, overrides or {})
+    end
+
+    it('generates property segments with correct values', function()
+      local headline = make_headline({ properties = { ID = 'abc-123', EFFORT = '2h' } })
+      local opts = base_opts({
+        show_properties = {
+          { name = 'ID', max_width = 10 },
+          { name = 'EFFORT', max_width = 6 },
+        },
+        widths = { properties = { ID = 10, EFFORT = 6 } },
+      })
+
+      local segments, text = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- title segment + 2 property segments = 3
+      assert.equals(3, #segments)
+      -- Property values should be in segments
+      assert.is_truthy(segments[1][1]:find('abc%-123'))
+      assert.is_truthy(segments[2][1]:find('2h'))
+      -- Property values should be in searchable text
+      assert.is_truthy(text:find('abc%-123'))
+      assert.is_truthy(text:find('2h'))
+    end)
+
+    it('uses custom highlight group when specified', function()
+      local headline = make_headline({ properties = { EFFORT = '30min' } })
+      local opts = base_opts({
+        show_properties = { { name = 'EFFORT', highlight = 'Number' } },
+        widths = { properties = { EFFORT = 8 } },
+      })
+
+      local segments, _ = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- segments[1] = property, segments[2] = title
+      assert.equals('Number', segments[1][2])
+    end)
+
+    it('uses Comment as default highlight', function()
+      local headline = make_headline({ properties = { ID = 'x' } })
+      local opts = base_opts({
+        show_properties = { { name = 'ID' } },
+        widths = { properties = { ID = 5 } },
+      })
+
+      local segments, _ = highlights.get_headline_segments(headline, 'test.org', opts)
+      assert.equals('Comment', segments[1][2])
+    end)
+
+    it('auto-hides property column when width is 0', function()
+      local headline = make_headline({ properties = { ID = '' } })
+      local opts = base_opts({
+        show_properties = { { name = 'ID' } },
+        widths = { properties = {} }, -- ID not in widths = auto-hidden
+      })
+
+      local segments, _ = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Only title segment
+      assert.equals(1, #segments)
+    end)
+
+    it('inserts blank space for empty property value when column is visible', function()
+      local headline = make_headline({ properties = { ID = '' } })
+      local opts = base_opts({
+        show_properties = { { name = 'ID' } },
+        widths = { properties = { ID = 8 } },
+      })
+
+      local segments, text = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Blank spacer segment + title = 2
+      assert.equals(2, #segments)
+      -- Spacer has no highlight (single-element table)
+      assert.is_nil(segments[1][2])
+      -- Only title in search text (no property value added)
+      assert.equals('* Test', text)
+    end)
+
+    it('truncates long property values with ellipsis', function()
+      local headline = make_headline({ properties = { ID = 'very-long-identifier-value' } })
+      local opts = base_opts({
+        show_properties = { { name = 'ID', max_width = 8 } },
+        widths = { properties = { ID = 8 } },
+      })
+
+      local segments, _ = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Property segment text should be truncated to width + 1 space
+      local prop_text = segments[1][1]
+      -- The padded text (without trailing space) should be exactly 8 chars wide
+      local trimmed = prop_text:sub(1, -2) -- remove trailing space
+      assert.equals(8, vim.fn.strdisplaywidth(trimmed))
+      assert.is_truthy(trimmed:find('…'))
+    end)
+
+    it('places properties between location and tags', function()
+      local headline = make_headline({
+        all_tags = { 'work' },
+        properties = { ID = 'test-id' },
+      })
+      local opts = base_opts({
+        show_location = true,
+        show_tags = true,
+        show_properties = { { name = 'ID' } },
+        widths = { location = 10, tags = 6, properties = { ID = 8 } },
+      })
+
+      local segments, _ = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Order: location, property, tags, title
+      assert.equals(4, #segments)
+      assert.equals('Comment', segments[1][2]) -- location
+      assert.equals('Comment', segments[2][2]) -- property (default hl)
+      assert.equals('@org.tag', segments[3][2]) -- tags
+    end)
+  end)
 end)

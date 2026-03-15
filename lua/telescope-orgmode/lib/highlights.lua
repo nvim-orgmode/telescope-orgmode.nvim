@@ -110,6 +110,23 @@ function M.get_headline_segments(headline, filename, opts)
     table.insert(text_parts, location)
   end
 
+  -- Property columns - after location, before tags
+  if opts.show_properties and widths.properties then
+    for _, prop_config in ipairs(opts.show_properties) do
+      local prop_width = widths.properties[prop_config.name]
+      if prop_width and prop_width > 0 then
+        local val = (headline.properties or {})[prop_config.name] or ''
+        local hl = prop_config.highlight or 'Comment'
+        if val ~= '' then
+          table.insert(segments, { M.pad(val, prop_width) .. ' ', hl })
+          table.insert(text_parts, val)
+        else
+          table.insert(segments, { string.rep(' ', prop_width + 1) })
+        end
+      end
+    end
+  end
+
   -- Tags - special highlight, padded (ALWAYS reserve space if show_tags is true)
   if opts.show_tags and widths.tags and widths.tags > 0 then
     local max_width = opts.tags_max_width and math.min(widths.tags, opts.tags_max_width) or widths.tags
