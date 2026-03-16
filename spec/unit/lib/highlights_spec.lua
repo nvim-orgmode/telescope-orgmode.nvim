@@ -239,6 +239,74 @@ describe('[Unit: lib/highlights]', function()
       assert.is_truthy(trimmed:find('…'))
     end)
 
+    it('uses ordinal_fields order for plain text when configured', function()
+      local headline = make_headline({
+        todo_value = 'TODO',
+        todo_type = 'TODO',
+        all_tags = { 'work' },
+        line_number = 5,
+      })
+      local opts = base_opts({
+        show_location = true,
+        show_tags = true,
+        show_todo_state = true,
+        show_priority = false,
+        ordinal_fields = { 'state', 'headline', 'tags' },
+        widths = { location = 10, tags = 6, todo = 6 },
+      })
+
+      local segments, text = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Plain text should follow ordinal_fields order: state, headline, tags
+      assert.equals('TODO * Test work', text)
+      -- Segments (display) should still be in visual order (unchanged)
+      assert.is_true(#segments >= 3)
+    end)
+
+    it('excludes fields from plain text not listed in ordinal_fields', function()
+      local headline = make_headline({
+        todo_value = 'TODO',
+        todo_type = 'TODO',
+        all_tags = { 'work' },
+        line_number = 5,
+      })
+      local opts = base_opts({
+        show_location = true,
+        show_tags = true,
+        show_todo_state = true,
+        ordinal_fields = { 'headline' },
+        widths = { location = 10, tags = 6, todo = 6 },
+      })
+
+      local _, text = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Only headline in text
+      assert.equals('* Test', text)
+    end)
+
+    it('uses default field order when ordinal_fields is nil', function()
+      local headline = make_headline({
+        todo_value = 'TODO',
+        todo_type = 'TODO',
+        all_tags = { 'work' },
+        line_number = 5,
+      })
+      local opts = base_opts({
+        show_location = true,
+        show_tags = true,
+        show_todo_state = true,
+        widths = { location = 10, tags = 6, todo = 6 },
+      })
+
+      local _, text = highlights.get_headline_segments(headline, 'test.org', opts)
+
+      -- Default: all visible fields in text (state, headline, location, tags)
+      assert.is_truthy(text:find('TODO'))
+      assert.is_truthy(text:find('Test'))
+      assert.is_truthy(text:find('work'))
+      assert.is_truthy(text:find('test%.org'))
+    end)
+
     it('places properties between location and tags', function()
       local headline = make_headline({
         all_tags = { 'work' },

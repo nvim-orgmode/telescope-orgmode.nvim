@@ -1,6 +1,7 @@
 require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
 local highlights = require('telescope-orgmode.lib.highlights')
+local ordinal_mod = require('telescope-orgmode.lib.ordinal')
 
 ---Get location text by preference order (for width calculation)
 ---@param headline table Headline data
@@ -182,6 +183,8 @@ M.make_entry = function(opts)
     return displayer(columns)
   end
 
+  local ordinal_fields = ordinal_mod.resolve_fields(opts)
+
   return function(entry)
     local headline = entry.headline
     local lnum = headline.line_number
@@ -189,36 +192,13 @@ M.make_entry = function(opts)
     local line = string.format('%s %s', string.rep('*', headline.level), headline.title)
     local tags = table.concat(headline.all_tags, ':')
 
-    -- Build ordinal field based on visible columns
-    local ordinal_parts = { line }
-
-    if opts.show_location then
-      table.insert(ordinal_parts, location)
-    end
-
-    if opts.show_tags and #tags > 0 then
-      table.insert(ordinal_parts, tags)
-    end
-
-    if opts.show_todo_state and headline.todo_value then
-      table.insert(ordinal_parts, 1, headline.todo_value)
-    end
-
-    if opts.show_priority and headline.priority then
-      table.insert(ordinal_parts, 1, '[#' .. headline.priority .. ']')
-    end
-
-    -- Property values in ordinal for fuzzy search
-    if opts.show_properties and headline.properties then
-      for _, prop_config in ipairs(opts.show_properties) do
-        local val = headline.properties[prop_config.name]
-        if val and val ~= '' then
-          table.insert(ordinal_parts, val)
-        end
-      end
-    end
-
-    local ordinal = table.concat(ordinal_parts, ' ')
+    local ordinal = ordinal_mod.build(ordinal_fields, {
+      headline = headline,
+      location = location,
+      tags = tags,
+      line = line,
+      opts = opts,
+    })
 
     return {
       value = entry,

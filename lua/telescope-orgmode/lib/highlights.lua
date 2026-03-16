@@ -1,3 +1,5 @@
+local ordinal_mod = require('telescope-orgmode.lib.ordinal')
+
 local M = {}
 
 ---Get highlight group for TODO keyword
@@ -98,16 +100,17 @@ end
 ---@return string plain_text Plain text for searching
 function M.get_headline_segments(headline, filename, opts)
   local segments = {}
-  local text_parts = {}
   local widths = opts.widths or {}
 
+  -- Build display segments (visual column order - unchanged)
+
   -- Location - dimmed, padded (uses preference: category > filename by default)
+  local location
   if opts.show_location and widths.location and widths.location > 0 then
     local location_text = get_location_by_preference(headline, filename, opts.location_preference)
-    local location = string.format('%s:%i', location_text, headline.line_number)
+    location = string.format('%s:%i', location_text, headline.line_number)
     local max_width = opts.location_max_width and math.min(widths.location, opts.location_max_width) or widths.location
     table.insert(segments, { M.pad(location, max_width) .. '  ', 'Comment' })
-    table.insert(text_parts, location)
   end
 
   -- Property columns - after location, before tags
@@ -119,7 +122,6 @@ function M.get_headline_segments(headline, filename, opts)
         local hl = prop_config.highlight or 'Comment'
         if val ~= '' then
           table.insert(segments, { M.pad(val, prop_width) .. ' ', hl })
-          table.insert(text_parts, val)
         else
           table.insert(segments, { string.rep(' ', prop_width + 1) })
         end
@@ -133,7 +135,6 @@ function M.get_headline_segments(headline, filename, opts)
     if #headline.all_tags > 0 then
       local tags = table.concat(headline.all_tags, ':')
       table.insert(segments, { M.pad(tags, max_width) .. ' ', '@org.tag' })
-      table.insert(text_parts, tags)
     else
       -- Add empty space to maintain column alignment
       table.insert(segments, { string.rep(' ', max_width + 1) })
@@ -145,7 +146,6 @@ function M.get_headline_segments(headline, filename, opts)
     if headline.todo_value then
       local hl = M.get_todo_highlight(headline.todo_value, headline.todo_type)
       table.insert(segments, { M.pad(headline.todo_value, widths.todo) .. ' ', hl })
-      table.insert(text_parts, headline.todo_value)
     else
       -- Add empty space to maintain column alignment
       table.insert(segments, { string.rep(' ', widths.todo + 1) })
@@ -160,7 +160,6 @@ function M.get_headline_segments(headline, filename, opts)
         segments,
         { M.pad(priority_str, widths.priority) .. ' ', M.get_priority_highlight(headline.priority) }
       )
-      table.insert(text_parts, priority_str)
     else
       -- Add empty space to maintain column alignment
       table.insert(segments, { string.rep(' ', widths.priority + 1) })
@@ -171,10 +170,20 @@ function M.get_headline_segments(headline, filename, opts)
   local title = string.format('%s %s', string.rep('*', headline.level), headline.title)
   local level_hl = M.get_level_highlight(headline.level)
   table.insert(segments, { title, level_hl })
-  table.insert(text_parts, title)
+
+  -- Build search text via ordinal module (respects ordinal_fields config)
+  local ordinal_fields = ordinal_mod.resolve_fields(opts)
+  local tags = table.concat(headline.all_tags, ':')
+  local plain_text = ordinal_mod.build(ordinal_fields, {
+    headline = headline,
+    location = location or string.format('%s:%i', vim.fn.fnamemodify(filename, ':t'), headline.line_number),
+    tags = tags,
+    line = title,
+    opts = opts,
+  })
 
   -- Return both formatted segments and plain text for searching
-  return segments, table.concat(text_parts, ' ')
+  return segments, plain_text
 end
 
 return M

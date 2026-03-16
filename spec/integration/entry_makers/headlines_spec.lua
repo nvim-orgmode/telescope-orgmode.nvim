@@ -515,6 +515,101 @@ describe('[Entry Maker: Headlines]', function()
     end)
   end)
 
+  describe('ordinal_fields configuration', function()
+    it('should use configured field order for ordinal', function()
+      local file = load_file_sync({
+        '* TODO [#A] Important task :work:',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local results, widths = headlines_entry_maker.get_entries({})
+      local make_entry = headlines_entry_maker.make_entry({
+        show_todo_state = true,
+        show_priority = true,
+        show_tags = true,
+        show_location = true,
+        ordinal_fields = { 'state', 'headline' },
+        widths = widths,
+      })
+
+      local entry = make_entry(results[1])
+
+      -- Ordinal should start with state, then headline
+      assert.is_truthy(string.find(entry.ordinal, '^TODO'))
+      assert.is_truthy(string.find(entry.ordinal, 'Important task'))
+      -- Priority and tags should NOT be in ordinal (not in ordinal_fields)
+      assert.is_falsy(string.find(entry.ordinal, '%[#A%]'))
+      assert.is_falsy(string.find(entry.ordinal, 'work'))
+    end)
+
+    it('should default to show_* derived fields when ordinal_fields is nil', function()
+      local file = load_file_sync({
+        '* TODO [#A] Task :tag:',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local results, widths = headlines_entry_maker.get_entries({})
+      local make_entry = headlines_entry_maker.make_entry({
+        show_todo_state = true,
+        show_priority = true,
+        show_tags = true,
+        show_location = true,
+        widths = widths,
+      })
+
+      local entry = make_entry(results[1])
+
+      -- All visible fields should be in ordinal
+      assert.is_truthy(string.find(entry.ordinal, 'TODO'))
+      assert.is_truthy(string.find(entry.ordinal, '%[#A%]'))
+      assert.is_truthy(string.find(entry.ordinal, 'Task'))
+      assert.is_truthy(string.find(entry.ordinal, 'tag'))
+    end)
+
+    it('should put headline-only in ordinal when configured', function()
+      local file = load_file_sync({
+        '* TODO [#B] My headline :urgent:',
+      })
+
+      package.loaded['orgmode'] = {
+        files = {
+          all = function()
+            return { file }
+          end,
+        },
+      }
+
+      local results, widths = headlines_entry_maker.get_entries({})
+      local make_entry = headlines_entry_maker.make_entry({
+        show_todo_state = true,
+        show_priority = true,
+        show_tags = true,
+        show_location = true,
+        ordinal_fields = { 'headline' },
+        widths = widths,
+      })
+
+      local entry = make_entry(results[1])
+
+      -- Only headline in ordinal
+      assert.equals('* My headline', entry.ordinal)
+    end)
+  end)
+
   describe('property performance', function()
     it('should process 500 headlines × 2 properties under 500ms', function()
       -- Generate 500 headlines with property drawers

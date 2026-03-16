@@ -177,6 +177,57 @@ describe('[Unit: lib/config]', function()
     end)
   end)
 
+  describe('ordinal_fields validation', function()
+    it('accepts nil ordinal_fields', function()
+      local cfg = config.merge({})
+      local valid, err = config.validate(cfg)
+      assert.is_true(valid)
+      assert.is_nil(err)
+    end)
+
+    it('accepts valid ordinal_fields', function()
+      local cfg = { ordinal_fields = { 'state', 'headline', 'tags' } }
+      local valid, err = config.validate(cfg)
+      assert.is_true(valid)
+      assert.is_nil(err)
+    end)
+
+    it('accepts all known field names', function()
+      local cfg = { ordinal_fields = { 'headline', 'state', 'priority', 'location', 'tags', 'properties' } }
+      local valid, err = config.validate(cfg)
+      assert.is_true(valid)
+      assert.is_nil(err)
+    end)
+
+    it('accepts empty ordinal_fields', function()
+      local cfg = { ordinal_fields = {} }
+      local valid, err = config.validate(cfg)
+      assert.is_true(valid)
+      assert.is_nil(err)
+    end)
+
+    it('rejects non-table ordinal_fields', function()
+      local cfg = { ordinal_fields = 'headline' }
+      local valid, err = config.validate(cfg)
+      assert.is_false(valid)
+      assert.matches('ordinal_fields must be a table', err)
+    end)
+
+    it('rejects unknown field names', function()
+      local cfg = { ordinal_fields = { 'headline', 'invalid' } }
+      local valid, err = config.validate(cfg)
+      assert.is_false(valid)
+      assert.matches('ordinal_fields%[2%]', err)
+    end)
+
+    it('rejects non-string entries', function()
+      local cfg = { ordinal_fields = { 'headline', 42 } }
+      local valid, err = config.validate(cfg)
+      assert.is_false(valid)
+      assert.matches('ordinal_fields%[2%]', err)
+    end)
+  end)
+
   describe('get_original_file', function()
     it('returns a string', function()
       local filename = config.get_original_file()

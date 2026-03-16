@@ -114,6 +114,7 @@ Pass options to `setup()` (Snacks) or `telescope.setup({ extensions = { orgmode 
 | `show_priority` | boolean | true | Show priority column |
 | `location_max_width` | number | 15 | Max width for location column |
 | `tags_max_width` | number | 15 | Max width for tags column |
+| `ordinal_fields` | string[]\|nil | nil | Search field order and selection (see [Search priority](#search-priority)) |
 
 ### Per-call examples
 
@@ -130,6 +131,23 @@ tom.refile_heading({ max_depth = 3 })
 -- Sort tags alphabetically
 tom.search_tags({ initial_sort = "alphabetical" })
 ```
+
+### Search priority
+
+Control which fields the fuzzy matcher searches and in what order. Fields listed first get a slight ranking boost.
+
+```lua
+-- Default (all visible columns):
+ordinal_fields = { 'state', 'priority', 'headline', 'location', 'tags', 'properties' }
+
+-- Only match against state and headline:
+ordinal_fields = { 'state', 'headline' }
+
+-- Prioritize tags:
+ordinal_fields = { 'tags', 'state', 'headline' }
+```
+
+Omitted fields are still displayed but not searched.
 
 ## Architecture
 

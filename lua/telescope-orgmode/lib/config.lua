@@ -16,6 +16,7 @@ local M = {}
 ---@field location_max_width number
 ---@field tags_max_width number
 ---@field show_properties OrgmodePropertyConfig[]
+---@field ordinal_fields string[]|nil
 
 -- Business logic defaults
 M.defaults = {
@@ -133,6 +134,21 @@ function M.validate(config)
 
       if prop.highlight ~= nil and type(prop.highlight) ~= 'string' then
         return false, string.format('show_properties[%d].highlight must be a string', i)
+      end
+    end
+  end
+
+  if config.ordinal_fields ~= nil then
+    if type(config.ordinal_fields) ~= 'table' then
+      return false, 'ordinal_fields must be a table'
+    end
+
+    local valid_fields =
+      { headline = true, state = true, priority = true, location = true, tags = true, properties = true }
+    for i, field in ipairs(config.ordinal_fields) do
+      if type(field) ~= 'string' or not valid_fields[field] then
+        return false,
+          string.format('ordinal_fields[%d] must be one of: headline, state, priority, location, tags, properties', i)
       end
     end
   end
