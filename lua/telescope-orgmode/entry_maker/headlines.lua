@@ -1,6 +1,5 @@
 require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
-local entry_display = require('telescope.pickers.entry_display')
 local highlights = require('telescope-orgmode.lib.highlights')
 
 ---Get location text by preference order (for width calculation)
@@ -79,6 +78,7 @@ end
 ---@param opts { location_max_width?: number, tags_max_width?: number, show_location?: boolean, show_tags?: boolean, show_todo_state?: boolean, show_priority?: boolean, widths?: { location: number, tags: number, todo: number, priority: number } }
 ---@return fun(entry: OrgHeadlineEntry):MatchEntry
 M.make_entry = function(opts)
+  local entry_display = require('telescope.pickers.entry_display')
   local widths = opts.widths or { location = 0, tags = 0, todo = 0, priority = 0 }
 
   -- Build displayer items based on configuration

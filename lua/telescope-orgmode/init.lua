@@ -20,8 +20,22 @@ local function get_adapter(name)
   local ok, adapter = pcall(require, 'telescope-orgmode.adapters.' .. requested)
 
   if not ok then
-    vim.notify(string.format('Failed to load adapter "%s", falling back to telescope', requested), vim.log.levels.WARN)
-    adapter = require('telescope-orgmode.adapters.telescope')
+    local fallback_ok, fallback_adapter = pcall(require, 'telescope-orgmode.adapters.telescope')
+    if fallback_ok then
+      vim.notify(
+        string.format('Failed to load adapter "%s", falling back to telescope', requested),
+        vim.log.levels.WARN
+      )
+      adapter = fallback_adapter
+    else
+      error(
+        string.format(
+          'Failed to load adapter "%s" and telescope fallback is not available. '
+            .. 'Install telescope.nvim or the correct adapter plugin.',
+          requested
+        )
+      )
+    end
   end
 
   -- Only cache when using the default adapter (not per-call overrides)

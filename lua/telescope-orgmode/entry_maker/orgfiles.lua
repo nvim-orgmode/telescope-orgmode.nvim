@@ -1,6 +1,5 @@
 require('telescope-orgmode.entry_maker.types')
 local org = require('telescope-orgmode.org')
-local entry_display = require('telescope.pickers.entry_display')
 
 local M = {}
 
@@ -29,6 +28,7 @@ end
 ---Entry-Maker for Telescope
 ---@return fun(entry: OrgFileEntry):MatchEntry
 M.make_entry = function()
+  local entry_display = require('telescope.pickers.entry_display')
   local orgfile_displayer = entry_display.create({
     separator = ' ',
     items = {
