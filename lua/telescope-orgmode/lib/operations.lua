@@ -67,9 +67,12 @@ function M.navigate_to(entry)
   end
 
   vim.cmd("normal! m'")
-  vim.cmd('edit ' .. vim.fn.fnameescape(filename))
+  if vim.fn.expand('%:p') ~= vim.fn.fnamemodify(filename, ':p') then
+    vim.cmd('edit ' .. vim.fn.fnameescape(filename))
+  end
   if lnum then
     vim.api.nvim_win_set_cursor(0, { lnum, 0 })
+    vim.cmd('normal! zv')
   end
   return true
 end
