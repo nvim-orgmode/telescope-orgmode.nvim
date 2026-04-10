@@ -115,6 +115,8 @@ local function create_finder(state, opts)
         file = raw_entry.filename,
         pos = { raw_entry.headline.line_number, 0 }, -- {line, col} for preview positioning
         preview = 'file', -- Tell preview to use file previewer
+        -- Enable mtime-based frecency seed for files not yet visited
+        recent = true,
         -- Store original entry data for actions
         __entry = raw_entry,
       })
@@ -134,6 +136,8 @@ local function create_finder(state, opts)
         text = search_text,
         file = raw_entry.filename,
         preview = 'file', -- Tell preview to use file previewer
+        -- Enable mtime-based frecency seed for files not yet visited
+        recent = true,
         -- Store original entry data for actions
         __entry = raw_entry,
       })
@@ -144,14 +148,25 @@ end
 
 ---Custom format function for items with pre-formatted segments
 ---@param item table
+---@param _picker table? Snacks picker (unused, passed by Snacks)
+---@param debug_scoring boolean? When true, prepend score/frecency debug info
 ---@return table[] Array of highlight segments
-local function format_item(item)
-  -- Return pre-formatted segments if available
-  if item._formatted then
-    return item._formatted
+local function format_item(item, _picker, debug_scoring)
+  local segments = item._formatted or { { item.text or tostring(item) } }
+
+  if debug_scoring then
+    -- Build debug prefix: [score=X.X frec=X.X]
+    local score = item.score or 0
+    local frecency = item.frecency or 0
+    local debug_text = string.format('[s=%6.1f f=%4.1f] ', score, frecency)
+    local debug_segments = { { debug_text, 'WarningMsg' } }
+    for _, seg in ipairs(segments) do
+      table.insert(debug_segments, seg)
+    end
+    return debug_segments
   end
-  -- Fallback to plain text
-  return { { item.text or tostring(item) } }
+
+  return segments
 end
 
 ---Navigate to selected item
@@ -285,6 +300,7 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
     'filter_all_buffers',
     'filter_headline_file',
     'drop_filters',
+    'toggle_debug_scoring',
   }, {
     toggle_mode = function(picker)
       toggle_mode(state, picker_type, base_opts, picker)
@@ -302,18 +318,25 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
       ctx.selected_entry = item and (item.__entry or item)
     end),
     drop_filters = filter_handler('drop_filters'),
+    toggle_debug_scoring = filter_handler('toggle_debug_scoring'),
   })
 
   -- Build title with filter context
   local base_title = picker_config.prompt_titles[mode]
   local full_title = state:get_full_title(base_title)
 
+  local debug_scoring = state:get_filter('debug_scoring') or false
+
   local picker_opts = {
     title = full_title,
     items = items,
     pattern = preserved_query or '',
     preview = 'preview', -- Use default file previewer
-    format = format_item, -- Custom formatter with highlights
+    -- Enable native frecency-based scoring boost (subtle tiebreaker for ambiguous matches)
+    frecency = true,
+    format = function(item, picker)
+      return format_item(item, picker, debug_scoring)
+    end,
     win = {
       input = {
         keys = keys,

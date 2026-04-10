@@ -44,6 +44,10 @@ M.bindings = {
     description = 'Clear all filters',
     modes = { i = '<C-f><C-d>', n = '<C-f><C-d>' },
   },
+  toggle_debug_scoring = {
+    description = 'Toggle scoring debug display',
+    modes = { i = '<C-h><C-d>', n = '<C-h><C-d>' },
+  },
 }
 
 ---Execute keybinding action (framework-agnostic logic)
@@ -99,6 +103,10 @@ function M.execute_action(action_name, context)
     context.state:set_filter('tag_query', nil)
     context.state:set_filter('current_files', {})
     context.state:set_filter('only_current_file', nil)
+    context.refresh_fn(context.state)
+  elseif action_name == 'toggle_debug_scoring' then
+    local current = context.state:get_filter('debug_scoring')
+    context.state:set_filter('debug_scoring', not current)
     context.refresh_fn(context.state)
   end
 end
