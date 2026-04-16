@@ -242,9 +242,9 @@ function M.search_headings(user_opts)
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
       layout_config = {
-        width = 0.95,
-        height = 0.95,
-        preview_width = 0.4,
+        width = conf.layout_config.width,
+        height = conf.layout_config.height,
+        preview_width = conf.layout_config.preview_width,
       },
       attach_mappings = function(_, map)
         attach_common_mappings(map, state, opts)
