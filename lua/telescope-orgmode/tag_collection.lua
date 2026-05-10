@@ -5,41 +5,27 @@
 
 local M = {}
 
---- Collect all tags with occurrence counts from orgmode files
---- Excludes archived files
+--- Collect all tags with occurrence counts through the resolved source.
+--- opts is passed along so opts.source / opts.archived take effect.
+--- lib.sources and lib.config are required lazily to avoid a circular
+--- module load (config requires sources).
+---@param opts? table { source?: string, archived?: boolean, ... }
 ---@return TagInfo[]
-function M.collect_tags_with_counts()
-  local tag_info = {} -- { [tag] = { count, files_set } }
-  local orgmode = require('orgmode')
-
-  for _, orgfile in ipairs(orgmode.files:all()) do
-    if not orgfile:is_archive_file() then
-      local filename = orgfile.filename
-
-      -- Count tags from headlines (includes inherited tags if enabled)
-      for _, headline in ipairs(orgfile:get_headlines()) do
-        for _, tag in ipairs(headline:get_tags()) do
-          if not tag_info[tag] then
-            tag_info[tag] = { count = 0, files = {} }
-          end
-          tag_info[tag].count = tag_info[tag].count + 1
-          tag_info[tag].files[filename] = true
-        end
-      end
-    end
+function M.collect_tags_with_counts(opts)
+  opts = opts or {}
+  local sources = require('telescope-orgmode.lib.sources')
+  local cfg = require('telescope-orgmode.lib.config')
+  local source = sources.resolve_source(opts, {
+    sources = cfg.defaults.sources,
+    default_source = cfg.defaults.default_source,
+    picker_defaults = cfg.picker_defaults,
+    source_setup = cfg.defaults.source_setup,
+  })
+  local tags = source.enumerate_tags(opts)
+  for _, entry in ipairs(tags) do
+    sources.normalize_tag(entry)
   end
-
-  -- Convert to array and add file lists
-  local result = {}
-  for tag, info in pairs(tag_info) do
-    table.insert(result, {
-      tag = tag,
-      count = info.count,
-      files = vim.tbl_keys(info.files),
-    })
-  end
-
-  return result
+  return tags
 end
 
 --- Sort tags by frequency or alphabetically

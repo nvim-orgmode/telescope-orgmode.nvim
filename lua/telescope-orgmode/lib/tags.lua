@@ -56,7 +56,9 @@ function M.get_tag_preview_lines(tag, opts)
 
   for _, hl in ipairs(headlines) do
     local file_short = vim.fn.fnamemodify(hl.filename, ':~:.')
-    local line = string.format('%s %s %s', hl.todo, hl.priority, hl.title)
+    -- todo_value / priority are optional; the or-guard keeps the printf
+    -- columns stable when a field is nil.
+    local line = string.format('%s %s %s', hl.todo_value or '', hl.priority or '', hl.title)
     table.insert(lines, line)
     table.insert(lines, '  → ' .. file_short)
     table.insert(lines, '')

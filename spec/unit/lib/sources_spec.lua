@@ -1,14 +1,6 @@
--- Unit tests for lib/sources/init.lua
---
--- Phase 2 (tom-0044): Source-Skelett
---   * Registry-Lookup mit Type-Union (Pre-Built/Factory) + Cache
---   * Runtime-Validation auf unbekannte Sources
---   * Drei Normalisierungs-Funktionen (headline/file/tag)
---   * validate_setup() für referenzielle Integrität
---   * invalidate_cache() für Setup-Idempotenz
---
--- Test-Isolation: sources ist Modul-State (siehe Plan §Implementation Risks).
--- before_each ruft invalidate_cache() auf.
+-- Unit tests for lib/sources/init.lua. The module holds state (source
+-- cache + notify cache), so before_each calls invalidate_cache() to
+-- isolate cases.
 
 local sources = require('telescope-orgmode.lib.sources')
 
@@ -74,23 +66,6 @@ describe('[Unit: lib/sources]', function()
       local source = sources.resolve_source({ source = 'custom' }, config)
 
       assert.equals('custom', source.name)
-    end)
-
-    it('falls back to picker_defaults[picker_type].source', function()
-      local config = {
-        sources = {
-          default = fake_source('default'),
-          picker_specific = fake_source('picker_specific'),
-        },
-        default_source = 'default',
-        picker_defaults = {
-          insert_link = { source = 'picker_specific' },
-        },
-      }
-
-      local source = sources.resolve_source({ picker_type = 'insert_link' }, config)
-
-      assert.equals('picker_specific', source.name)
     end)
 
     it('throws a clear error when opts.source is unknown', function()

@@ -3,164 +3,86 @@ local OrgAgendaApi = require('orgmode.api.agenda')
 
 local M = {}
 
-function M.load_files(opts)
-  ---@type { filename: string, title: string }[]
-  local file_results = vim.tbl_map(function(file)
-    return { filename = file.filename, title = file:get_title() }
-  end, require('orgmode').files:all())
+-- Source-Bridge: alle Pipeline-Loader delegieren an einen Source
+-- (Default: telescope-orgmode.lib.sources.default). Auflösung erfolgt über
+-- sources.resolve_source mit der globalen Config — so wirkt sowohl
+-- opts.source als auch picker_defaults[*].source.
+local sources = require('telescope-orgmode.lib.sources')
 
-  if not opts.archived then
-    file_results = vim.tbl_filter(function(entry)
-      return not (vim.fn.fnamemodify(entry.filename, ':e') == 'org_archive')
-    end, file_results)
-  end
-
-  table.sort(file_results, function(a, b)
-    local stat_a = vim.uv.fs_stat(a.filename)
-    local stat_b = vim.uv.fs_stat(b.filename)
-    local mtime_a = stat_a and stat_a.mtime.sec or 0
-    local mtime_b = stat_b and stat_b.mtime.sec or 0
-    return mtime_a > mtime_b
-  end)
-
-  return file_results
+local function get_config()
+  local cfg = require('telescope-orgmode.lib.config')
+  return {
+    sources = cfg.defaults.sources,
+    default_source = cfg.defaults.default_source,
+    picker_defaults = cfg.picker_defaults,
+    source_setup = cfg.defaults.source_setup,
+  }
 end
 
-function M.load_headlines(opts)
-  -- Get files sorted by modification time (most recent first)
-  local files = require('orgmode').files:all()
+local function resolve(opts)
+  return sources.resolve_source(opts, get_config())
+end
 
-  if opts.only_current_file then
-    local current_file = opts.original_file or vim.api.nvim_buf_get_name(0)
-    if current_file == '' then
-      current_file = vim.fn.expand('%:p')
-    end
-    files = vim.tbl_filter(function(file)
-      return file.filename == current_file
-    end, files)
+function M.load_files(opts)
+  opts = opts or {}
+  local source = resolve(opts)
+  local results = source.enumerate_files(opts)
+  for _, entry in ipairs(results) do
+    sources.normalize_file(entry)
   end
-
-  if not opts.archived then
-    files = vim.tbl_filter(function(file)
-      return not (vim.fn.fnamemodify(file.filename, ':e') == 'org_archive')
-    end, files)
-  end
-
-  table.sort(files, function(a, b)
-    local stat_a = vim.uv.fs_stat(a.filename)
-    local stat_b = vim.uv.fs_stat(b.filename)
-    local mtime_a = stat_a and stat_a.mtime.sec or 0
-    local mtime_b = stat_b and stat_b.mtime.sec or 0
-    return mtime_a > mtime_b
-  end)
-
-  ---@type { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string, properties?: table<string, string> }[]
-  local results = {}
-  local load_properties = opts.show_properties and #opts.show_properties > 0
-  for _, file in ipairs(files) do
-    -- Skip archive files unless explicitly requested
-    local headlines = opts.archived and file:get_headlines_including_archived() or file:get_headlines()
-    for _, headline in ipairs(headlines) do
-      if
-        (not opts.max_depth or headline:get_level() <= opts.max_depth) and (opts.archived or not headline:is_archived())
-      then
-        local todo_keyword = headline:get_todo()
-        local priority = headline:get_priority()
-
-        local properties = {}
-        if load_properties then
-          for _, prop_config in ipairs(opts.show_properties) do
-            properties[prop_config.name] = headline:get_property(prop_config.name) or ''
-          end
-        end
-
-        table.insert(results, {
-          filename = file.filename,
-          title = headline:get_title(),
-          level = headline:get_level(),
-          line_number = headline:get_range().start_line,
-          all_tags = headline:get_tags(),
-          is_archived = headline:is_archived(),
-          todo_value = todo_keyword,
-          todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
-          priority = (priority and priority ~= '') and priority or nil,
-          properties = properties,
-        })
-      end
-    end
-  end
-
   return results
 end
 
---- Load headlines using orgmode Search API with tag-based filtering
---- Returns same data structure as load_headlines() for consistency
+function M.load_headlines(opts)
+  opts = opts or {}
+  local source = resolve(opts)
+  local results = source.enumerate_headlines(opts)
+  for _, entry in ipairs(results) do
+    sources.normalize_headline(entry)
+  end
+  return results
+end
+
+--- Load headlines using orgmode Search API with tag-based filtering.
+--- Bevorzugt source.enumerate_headlines_by_query; bei nil wird auf
+--- enumerate_headlines + Search:new()-Post-Filter zurückgefallen.
 ---@param query string Orgmode search query (e.g., "+work", "tag1|tag2")
----@param opts { only_current_file?: boolean, archived?: boolean, max_depth?: number, original_file?: string, show_properties?: OrgmodePropertyConfig[] }
----@return { filename: string, title: string, level: number, line_number: number, all_tags: string[], is_archived: boolean, todo_value?: string, todo_type?: 'TODO'|'DONE'|'', priority?: string, properties?: table<string, string> }[]
+---@param opts table
+---@return table[] headline entries
 function M.load_headlines_by_search(query, opts)
-  local Search = require('orgmode.files.elements.search')
-  local search = Search:new(query)
+  opts = opts or {}
+  local source = resolve(opts)
 
-  local files = require('orgmode').files:all()
-
-  if opts.only_current_file then
-    local current_file = opts.original_file or vim.api.nvim_buf_get_name(0)
-    if current_file == '' then
-      current_file = vim.fn.expand('%:p')
-    end
-    files = vim.tbl_filter(function(file)
-      return file.filename == current_file
-    end, files)
-  end
-
-  if not opts.archived then
-    files = vim.tbl_filter(function(file)
-      return not (vim.fn.fnamemodify(file.filename, ':e') == 'org_archive')
-    end, files)
-  end
-
-  table.sort(files, function(a, b)
-    local stat_a = vim.uv.fs_stat(a.filename)
-    local stat_b = vim.uv.fs_stat(b.filename)
-    local mtime_a = stat_a and stat_a.mtime.sec or 0
-    local mtime_b = stat_b and stat_b.mtime.sec or 0
-    return mtime_a > mtime_b
-  end)
-
-  local results = {}
-  local load_properties = opts.show_properties and #opts.show_properties > 0
-  for _, file in ipairs(files) do
-    for _, headline in ipairs(file:apply_search(search, false)) do
-      if not opts.max_depth or headline:get_level() <= opts.max_depth then
-        if opts.archived or not headline:is_archived() then
-          local todo_keyword = headline:get_todo()
-          local priority = headline:get_priority()
-
-          local properties = {}
-          if load_properties then
-            for _, prop_config in ipairs(opts.show_properties) do
-              properties[prop_config.name] = headline:get_property(prop_config.name) or ''
-            end
-          end
-
-          table.insert(results, {
-            filename = file.filename,
-            title = headline:get_title(),
-            level = headline:get_level(),
-            line_number = headline:get_range().start_line,
-            all_tags = headline:get_tags(),
-            is_archived = headline:is_archived(),
-            todo_value = todo_keyword,
-            todo_type = todo_keyword and (headline:is_done() and 'DONE' or 'TODO') or '',
-            priority = (priority and priority ~= '') and priority or nil,
-            properties = properties,
-          })
-        end
+  local results
+  if source.enumerate_headlines_by_query then
+    results = source.enumerate_headlines_by_query(query, opts)
+  else
+    sources.notify_fallback(source)
+    local Search = require('orgmode.files.elements.search')
+    local search = Search:new(query)
+    local headlines = source.enumerate_headlines(opts)
+    results = {}
+    local max_count = opts.max_count
+    for _, headline in ipairs(headlines) do
+      if max_count and #results >= max_count then
+        break
+      end
+      -- Search:check erwartet eine Tabelle mit tags / props / todo. Im
+      -- Fallback-Pfad steht uns nur das normalisierte Schema zur Verfügung.
+      local matches = search:check({
+        tags = headline.all_tags or {},
+        props = headline.properties or {},
+        todo = headline.todo_value,
+      })
+      if matches then
+        table.insert(results, headline)
       end
     end
   end
 
+  for _, entry in ipairs(results) do
+    sources.normalize_headline(entry)
+  end
   return results
 end
 
@@ -262,54 +184,27 @@ function M.get_link_destination(entry, opts)
   return M.get_inter_file_link(entry)
 end
 
----Load tags with occurrence counts
----@param opts? { archived?: boolean }
+---Load tags with occurrence counts, respecting opts.source and
+---opts.archived.
+---@param opts? table
 ---@return { tag: string, count: number, files: string[] }[]
 function M.load_tags(opts)
   opts = opts or {}
   local tag_collection = require('telescope-orgmode.tag_collection')
-  local tags = tag_collection.collect_tags_with_counts()
+  local tags = tag_collection.collect_tags_with_counts(opts)
 
   -- Sort by frequency by default
   return tag_collection.sort_tags(tags, 'frequency')
 end
 
----Get headlines matching a specific tag (for preview)
+---Returns headlines tagged with `tag` in the full headline schema
+---(todo_value, priority, ...). Backed by load_headlines_by_search('+'..tag).
 ---@param tag string Tag to search for
----@param opts? { max_count?: number, archived?: boolean }
----@return { todo: string, priority: string, title: string, filename: string }[]
+---@param opts? { max_count?: number, archived?: boolean, source?: string }
+---@return table[] headline entries
 function M.get_headlines_for_tag(tag, opts)
   opts = opts or {}
-  local max_count = opts.max_count or 50
-  local headlines = {}
-
-  local orgmode = require('orgmode')
-  local Search = require('orgmode.files.elements.search')
-  local search = Search:new('+' .. tag)
-
-  local count = 0
-  for _, file in ipairs(orgmode.files:all()) do
-    if count >= max_count then
-      break
-    end
-
-    for _, headline in ipairs(file:apply_search(search, false)) do
-      if count >= max_count then
-        break
-      end
-
-      table.insert(headlines, {
-        todo = headline:get_todo() or '',
-        priority = headline:get_priority() or '',
-        title = headline:get_title(),
-        filename = file.filename,
-      })
-
-      count = count + 1
-    end
-  end
-
-  return headlines
+  return M.load_headlines_by_search('+' .. tag, vim.tbl_extend('keep', { max_count = 50 }, opts))
 end
 
 return M

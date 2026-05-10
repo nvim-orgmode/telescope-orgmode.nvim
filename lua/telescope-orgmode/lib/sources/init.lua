@@ -1,22 +1,14 @@
--- Source-Registry und Normalisierungs-Wrapper.
---
--- Aufgaben:
---   * resolve_source(opts, config): Pre-Built ∪ Factory auflösen, mit
---     Setup-Time-Cache. Reihenfolge: opts.source → picker_defaults →
---     default_source. Wirft auf unbekannten Namen.
---   * normalize_*(entry): füllt fehlende Schema-Felder in-place auf
---     (siehe Design §Entry-Schemata).
---   * validate_setup(config): referenzielle Integrität für default_source
---     und picker_defaults[*].source.
---   * invalidate_cache(): leert Modul-State (Lazy.nvim-Reload-Safety).
---
--- Modul-State: _resolved_cache hält Factory-Resultate; gemeinsamer Reset
--- via invalidate_cache(). Tests rufen invalidate_cache() in before_each.
+-- Source registry. Looks up sources (pre-built or factory) and
+-- exposes schema-normalization helpers for callers.
 
 local M = {}
 
 -- Modul-internes Setup-Time-Cache für Factory-Sources.
 local _resolved_cache = {}
+
+-- Tracks per-source fallback warnings (one notify per source name) for
+-- sources that don't implement `enumerate_headlines_by_query`.
+local _notified_fallbacks = {}
 
 ---@class OrgmodeSource
 ---@field name string
@@ -51,21 +43,17 @@ local function resolve_registry_entry(name, config)
   return source
 end
 
----Auswahl-Reihenfolge: opts.source → picker_defaults[picker_type].source
----→ default_source. Wirft auf unbekannten Namen.
----@param opts table|nil { source?: string, picker_type?: string }
----@param config table { sources, default_source, picker_defaults }
+---Resolves a source name from opts.source, falling back to
+---config.default_source. Picker-level overrides
+---(config.picker_defaults[*].source) are merged into opts upstream in
+---`config:new()`, so they reach this function via opts.source.
+---@param opts table|nil { source?: string }
+---@param config table { sources, default_source }
 ---@return OrgmodeSource
 function M.resolve_source(opts, config)
   opts = opts or {}
 
   local name = opts.source
-  if name == nil and opts.picker_type then
-    local picker_default = config.picker_defaults and config.picker_defaults[opts.picker_type]
-    if picker_default then
-      name = picker_default.source
-    end
-  end
   if name == nil then
     name = config.default_source
   end
@@ -142,10 +130,28 @@ function M.validate_setup(config)
   return true, nil
 end
 
----Leert den Factory-Cache. Wird vor jedem Setup-Re-Run aufgerufen,
----damit Lazy.nvim-Reloads sauber funktionieren.
+---Notify once per source name that org.load_headlines_by_search took
+---the fallback path, because the source does not implement
+---enumerate_headlines_by_query. Keeps every picker open from
+---repeating the warning.
+---@param source OrgmodeSource
+function M.notify_fallback(source)
+  local key = source and source.name or tostring(source)
+  if _notified_fallbacks[key] then
+    return
+  end
+  _notified_fallbacks[key] = true
+  vim.notify(
+    string.format("source '%s' does not support query semantics, falling back to enumerate_headlines", key),
+    vim.log.levels.WARN
+  )
+end
+
+---Clears the source and fallback-notify caches. Required to make factory
+---sources re-instantiate after a setup re-run (e.g. Lazy.nvim reload).
 function M.invalidate_cache()
   _resolved_cache = {}
+  _notified_fallbacks = {}
 end
 
 return M
