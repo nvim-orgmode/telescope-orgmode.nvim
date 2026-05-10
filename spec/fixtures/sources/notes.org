@@ -1,0 +1,14 @@
+#+TITLE: Notes
+
+* Quick note                                                        :note:
+A short reminder.
+
+* Archived branch                                                :ARCHIVE:
+:PROPERTIES:
+:ARCHIVE_TIME: 2026-05-01 Fr 10:00
+:END:
+
+This subtree is archived and must be filtered out by default.
+
+* Reading list                                                  :reading:
+Books to read.

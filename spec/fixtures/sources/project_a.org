@@ -1,0 +1,27 @@
+#+TITLE: Project A
+
+* TODO Set up CI pipeline                                       :work:urgent:
+:PROPERTIES:
+:ID:       project-a-task-1
+:CATEGORY: infra
+:END:
+
+Initial pipeline setup.
+
+* DONE Document architecture                                          :work:
+:PROPERTIES:
+:ID:       project-a-task-2
+:CATEGORY: docs
+:END:
+
+Architecture sketch finished.
+
+** Section under done task
+
+* Plain headline without keyword                                      :work:
+:PROPERTIES:
+:ID:       project-a-task-3
+:CATEGORY: misc
+:END:
+
+* Another plain headline                                            :urgent:
