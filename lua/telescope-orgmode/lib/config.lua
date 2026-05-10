@@ -1,5 +1,10 @@
 local M = {}
 
+-- Default source is registered eagerly so M.defaults.sources works
+-- without calling setup().
+local sources = require('telescope-orgmode.lib.sources')
+local default_source = require('telescope-orgmode.lib.sources.default')
+
 ---@class OrgmodePropertyConfig
 ---@field name string Property name as in drawer (case-sensitive)
 ---@field max_width number|nil Maximum column width (default 15)
@@ -34,11 +39,20 @@ M.defaults = {
   -- First available value in list will be displayed
   location_preference = { 'category', 'filename' },
   show_properties = {},
+  -- Source registry: name -> source table, or factory(source_setup) ->
+  -- source. The default source is always registered; user-defined
+  -- sources are merged in by setup().
+  sources = { default = default_source },
+  default_source = 'default',
+  -- Per-source setup tables (e.g. roam_db.path), passed to factories.
+  source_setup = {},
 }
 
 -- Picker-specific defaults
+-- source = nil → falls back to default_source.
 M.picker_defaults = {
   search_headings = {
+    source = nil,
     mode = 'headlines',
     prompt_titles = {
       headlines = 'Search Headlines',
@@ -46,6 +60,7 @@ M.picker_defaults = {
     },
   },
   insert_link = {
+    source = nil,
     mode = 'headlines',
     prompt_titles = {
       headlines = 'Insert Link to Headline',
@@ -53,6 +68,7 @@ M.picker_defaults = {
     },
   },
   refile_heading = {
+    source = nil,
     mode = 'headlines',
     prompt_titles = {
       headlines = 'Refile to Headline',
@@ -60,6 +76,7 @@ M.picker_defaults = {
     },
   },
   search_tags = {
+    source = nil,
     initial_sort = 'frequency',
     prompt_title = 'Org Tags',
   },
@@ -73,17 +90,39 @@ function M:new(picker_type, opts)
   return vim.tbl_extend('force', self.defaults, self.picker_defaults[picker_type] or {}, opts or {})
 end
 
----Setup global defaults
+---Merges user options into defaults. sources is shallow-merged,
+---picker_defaults is deep-merged, defaults uses force-merge. Throws on
+---unknown source references.
 ---@param ext_opts table
 function M.setup(ext_opts)
   ext_opts = ext_opts or {}
-  local picker_defaults = ext_opts.picker_defaults
-  if picker_defaults then
-    M.picker_defaults = vim.tbl_deep_extend('force', M.picker_defaults, picker_defaults)
-    ext_opts = vim.tbl_extend('force', {}, ext_opts)
-    ext_opts.picker_defaults = nil
+  sources.invalidate_cache()
+
+  -- sources and picker_defaults are merged separately so the final
+  -- tbl_extend cannot overwrite them: sources wants a merge rather than
+  -- a replace, and picker_defaults does not live in M.defaults.
+  local rest = vim.tbl_extend('force', {}, ext_opts)
+  rest.sources = nil
+  rest.picker_defaults = nil
+
+  if ext_opts.sources then
+    M.defaults.sources = vim.tbl_extend('force', M.defaults.sources, ext_opts.sources)
   end
-  M.defaults = vim.tbl_extend('force', M.defaults, ext_opts)
+
+  if ext_opts.picker_defaults then
+    M.picker_defaults = vim.tbl_deep_extend('force', M.picker_defaults, ext_opts.picker_defaults)
+  end
+
+  M.defaults = vim.tbl_extend('force', M.defaults, rest)
+
+  local ok, err = sources.validate_setup({
+    sources = M.defaults.sources,
+    default_source = M.defaults.default_source,
+    picker_defaults = M.picker_defaults,
+  })
+  if not ok then
+    error(err)
+  end
 end
 
 ---Merge user options with defaults

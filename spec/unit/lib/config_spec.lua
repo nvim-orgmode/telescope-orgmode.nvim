@@ -234,4 +234,145 @@ describe('[Unit: lib/config]', function()
       assert.equals('string', type(filename))
     end)
   end)
+
+  -- Tests run against a fresh copy of config so earlier setup() calls
+  -- cannot contaminate module state. Each case resets the fields it
+  -- cares about.
+  describe('source defaults', function()
+    it('exposes default_source = "default" in defaults', function()
+      assert.equals('default', config.defaults.default_source)
+    end)
+
+    it('exposes empty source_setup table in defaults', function()
+      assert.same({}, config.defaults.source_setup)
+    end)
+
+    it('registers the default source under sources.default', function()
+      local default_source = require('telescope-orgmode.lib.sources.default')
+      assert.equals(default_source, config.defaults.sources.default)
+    end)
+  end)
+
+  describe('picker_defaults source field', function()
+    it('has nil source for search_headings', function()
+      assert.is_nil(config.picker_defaults.search_headings.source)
+    end)
+
+    it('has nil source for insert_link', function()
+      assert.is_nil(config.picker_defaults.insert_link.source)
+    end)
+
+    it('has nil source for refile_heading', function()
+      assert.is_nil(config.picker_defaults.refile_heading.source)
+    end)
+
+    it('has nil source for search_tags', function()
+      assert.is_nil(config.picker_defaults.search_tags.source)
+    end)
+  end)
+
+  describe('setup with sources', function()
+    local sources = require('telescope-orgmode.lib.sources')
+
+    local function fake_source(name)
+      return {
+        name = name,
+        enumerate_files = function() end,
+        enumerate_headlines = function() end,
+        enumerate_tags = function() end,
+      }
+    end
+
+    -- Reset module state between tests, because config.setup mutates defaults.
+    local original_defaults
+    local original_picker_defaults
+    before_each(function()
+      original_defaults = vim.deepcopy(config.defaults)
+      original_picker_defaults = vim.deepcopy(config.picker_defaults)
+      sources.invalidate_cache()
+    end)
+    after_each(function()
+      config.defaults = original_defaults
+      config.picker_defaults = original_picker_defaults
+      sources.invalidate_cache()
+    end)
+
+    it('merges user sources with builtin defaults', function()
+      local custom = fake_source('custom')
+
+      config.setup({ sources = { custom = custom } })
+
+      assert.equals(custom, config.defaults.sources.custom)
+      assert.is_not_nil(config.defaults.sources.default)
+    end)
+
+    it('merges picker_defaults overrides deeply', function()
+      local custom = fake_source('custom')
+
+      config.setup({
+        sources = { custom = custom },
+        picker_defaults = {
+          insert_link = { source = 'custom' },
+        },
+      })
+
+      assert.equals('custom', config.picker_defaults.insert_link.source)
+      -- Existing fields (mode, prompt_titles) are preserved.
+      assert.equals('headlines', config.picker_defaults.insert_link.mode)
+    end)
+
+    it('invalidates the source cache so factory sources re-run', function()
+      local call_count = 0
+      config.setup({
+        sources = {
+          factory = function()
+            call_count = call_count + 1
+            return fake_source('factory')
+          end,
+        },
+        default_source = 'factory',
+      })
+
+      sources.resolve_source({}, config.defaults)
+      -- A repeated setup must clear the cache so the factory runs again.
+      config.setup({
+        sources = {
+          factory = function()
+            call_count = call_count + 1
+            return fake_source('factory')
+          end,
+        },
+        default_source = 'factory',
+      })
+      sources.resolve_source({}, config.defaults)
+
+      assert.equals(2, call_count)
+    end)
+
+    it('errors on unknown default_source', function()
+      assert.has_error(function()
+        config.setup({ default_source = 'nonexistent' })
+      end)
+    end)
+
+    it('errors on unknown picker_defaults[*].source', function()
+      assert.has_error(function()
+        config.setup({
+          picker_defaults = { insert_link = { source = 'nope' } },
+        })
+      end)
+    end)
+
+    it('error message names the unknown source and its location', function()
+      local ok, err = pcall(function()
+        config.setup({
+          picker_defaults = { insert_link = { source = 'nope' } },
+        })
+      end)
+
+      assert.is_false(ok)
+      assert.is_truthy(tostring(err):find('nope'))
+      assert.is_truthy(tostring(err):find('picker_defaults.insert_link.source'))
+    end)
+  end)
 end)
