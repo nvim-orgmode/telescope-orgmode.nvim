@@ -241,11 +241,6 @@ function M.search_headings(user_opts)
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      layout_config = {
-        width = 0.95,
-        height = 0.95,
-        preview_width = 0.4,
-      },
       attach_mappings = function(_, map)
         attach_common_mappings(map, state, opts)
         return true
@@ -312,11 +307,6 @@ function M.refile_heading(user_opts)
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      layout_config = {
-        width = 0.95,
-        height = 0.95,
-        preview_width = 0.4,
-      },
       attach_mappings = function(_, map)
         action_set.select:replace(refile_action)
         attach_common_mappings(map, state, opts)
@@ -383,11 +373,6 @@ function M.insert_link(user_opts)
       finder = initial_finder,
       sorter = conf.generic_sorter(opts),
       previewer = conf.grep_previewer(opts),
-      layout_config = {
-        width = 0.95,
-        height = 0.95,
-        preview_width = 0.4,
-      },
       attach_mappings = function(_, map)
         action_set.select:replace(insert_action)
         attach_common_mappings(map, state, opts)
@@ -445,11 +430,6 @@ function M.search_tags(user_opts)
       }),
       sorter = conf.generic_sorter(opts),
       previewer = create_tag_previewer(),
-      layout_config = {
-        width = 0.95,
-        height = 0.95,
-        preview_width = 0.4,
-      },
       attach_mappings = function(prompt_bufnr, map)
         -- Toggle sort mode
         local toggle_sort_binding = keybindings.bindings.toggle_tag_sort
