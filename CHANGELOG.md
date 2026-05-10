@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.0
+
+**New features**
+
+- Configurable property columns: show org property drawer values (e.g. `ID`) as picker columns via `show_properties`
+- Configurable search field ordering via `ordinal_fields` (controls which fields the fuzzy matcher scores against)
+- Snacks picker boosts recently and frequently used files; new toggle exposes per-item scoring for tuning
+
+**Fixes**
+
+- Telescope picker respects the user's `telescope.setup()` layout configuration (was hardcoded to 0.95 × 0.95)
+- Folds are preserved when jumping to headlines
+
+**Notes**
+
+- Telescope picker no longer opens near-fullscreen by default. If you liked the old size, set `layout_config` in your `telescope.setup()`.
+- Search-result ranking may shift slightly due to unified field ordering across Telescope and Snacks.
+
+**Full Changelog**: https://github.com/nvim-orgmode/telescope-orgmode.nvim/compare/1.5.1...1.6.0
+
 ## 1.5.0
 
 **Snacks.nvim support**
