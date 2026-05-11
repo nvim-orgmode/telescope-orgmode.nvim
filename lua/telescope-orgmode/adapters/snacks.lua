@@ -10,6 +10,54 @@ local keybindings = require('telescope-orgmode.lib.keybindings')
 
 local M = {}
 
+---Merge user input keys with adapter keys. Adapter keys win on conflict.
+---@param user_keys table<string, any>
+---@param adapter_keys table<string, any>
+---@return table<string, any>
+local function merge_input_keys(user_keys, adapter_keys)
+  local merged = {}
+  for k, v in pairs(user_keys or {}) do
+    merged[k] = v
+  end
+  for k, v in pairs(adapter_keys or {}) do
+    merged[k] = v
+  end
+  return merged
+end
+M._merge_input_keys = merge_input_keys
+
+---Deep-merge per-call snacks opts on top of setup defaults. Per-call wins.
+---@param picker_type string
+---@param base_opts table|nil
+---@return table
+local function build_user_snacks(picker_type, base_opts)
+  local picker_defaults = config.picker_defaults[picker_type] or {}
+  local setup_snacks = picker_defaults.snacks or {}
+  local call_snacks = (base_opts or {}).snacks or {}
+  return vim.tbl_deep_extend('force', {}, setup_snacks, call_snacks)
+end
+M._build_user_snacks = build_user_snacks
+
+---Overlay adapter-owned fields on user snacks. `win.input.keys` come from
+---`merged_keys` and replace any user value.
+---@param user_snacks table
+---@param adapter_owned table
+---@param merged_keys table<string, any>
+---@return table
+local function merge_snacks_opts(user_snacks, adapter_owned, merged_keys)
+  local user_copy = vim.tbl_deep_extend('force', {}, user_snacks or {})
+  if user_copy.win and user_copy.win.input then
+    user_copy.win.input.keys = nil
+  end
+
+  local merged = vim.tbl_deep_extend('force', user_copy, adapter_owned or {})
+  merged.win = merged.win or {}
+  merged.win.input = merged.win.input or {}
+  merged.win.input.keys = merged_keys or {}
+  return merged
+end
+M._merge_snacks_opts = merge_snacks_opts
+
 ---Create picker state from config and opts
 ---Centralizes state initialization logic to avoid duplication
 ---Snacks-specific state creation (2-param pattern)
@@ -327,7 +375,11 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
 
   local debug_scoring = state:get_filter('debug_scoring') or false
 
-  local picker_opts = {
+  local user_snacks = build_user_snacks(picker_type, base_opts)
+  local user_keys = (user_snacks.win and user_snacks.win.input and user_snacks.win.input.keys) or {}
+  local merged_keys = merge_input_keys(user_keys, keys)
+
+  local adapter_owned = {
     title = full_title,
     items = items,
     pattern = preserved_query or '',
@@ -337,12 +389,9 @@ local function create_picker(state, picker_type, base_opts, preserved_query)
     format = function(item, picker)
       return format_item(item, picker, debug_scoring)
     end,
-    win = {
-      input = {
-        keys = keys,
-      },
-    },
   }
+
+  local picker_opts = merge_snacks_opts(user_snacks, adapter_owned, merged_keys)
 
   -- Add picker-specific confirm action
   -- Snacks confirm signature: function(picker, item)

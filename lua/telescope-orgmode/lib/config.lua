@@ -17,6 +17,7 @@ local M = {}
 ---@field tags_max_width number
 ---@field show_properties OrgmodePropertyConfig[]
 ---@field ordinal_fields string[]|nil
+---@field snacks table|nil Snacks-only picker options. Adapter-owned fields are ignored.
 
 -- Business logic defaults
 M.defaults = {

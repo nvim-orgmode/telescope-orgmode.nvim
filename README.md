@@ -149,6 +149,48 @@ ordinal_fields = { 'tags', 'state', 'headline' }
 
 Omitted fields are still displayed but not searched.
 
+### Telescope Adapter Options
+
+The Telescope adapter passes `opts` straight to `pickers.new()`. Any Telescope option works at the top level; there is no sub-namespace and no whitelist.
+
+```lua
+-- Vertical layout via standard Telescope keys
+require("telescope-orgmode").setup({
+  picker_defaults = {
+    search_headings = {
+      layout_strategy = "vertical",
+      layout_config = { width = 0.95 },
+    },
+  },
+})
+```
+
+See the [Telescope docs](https://github.com/nvim-telescope/telescope.nvim#themes) for the full option set.
+
+### Snacks Adapter Options
+
+The Snacks adapter accepts arbitrary picker options under a dedicated `snacks` sub-namespace, per picker type. Settings from `setup()` apply as defaults; per-call overrides deep-merge on top.
+
+Currently honored by `search_headings`, `refile_heading`, and `insert_link`. `search_tags` does not yet route through this pipeline. Values under `picker_defaults.search_tags.snacks` are ignored for now (follow-up).
+
+```lua
+-- Vertical layout for the headlines picker
+require("telescope-orgmode").setup({
+  adapter = "snacks",
+  picker_defaults = {
+    search_headings = {
+      snacks = { layout = "vertical" },
+    },
+  },
+})
+```
+
+All other Snacks options (window size, previewers, matcher, sort, formatters, custom `win.input.keys`) follow the same pattern: nest them under `snacks`. User-provided `win.input.keys` merge additively with the adapter's; on conflict the adapter's binding wins, which keeps plugin shortcuts like `<C-Space>` functional. For the full option set and key/action shape, see the [Snacks picker docs](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md).
+
+**Adapter-owned fields** (silently ignored if set by the user): `title`, `items`, `pattern`, `preview`, `frecency`, `format`, `confirm`. The singular `preview` (default-previewer selector) is owned; the plural `previewers` (your custom previewer definitions) is user-configurable.
+
+The `snacks` key has no effect when the Telescope adapter is active.
+
 ## Architecture
 
 ```
