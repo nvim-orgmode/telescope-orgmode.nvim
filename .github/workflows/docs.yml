@@ -1,0 +1,34 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - DOCS.org
+      - .github/workflows/docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    name: pandoc to vimdoc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: panvimdoc
+        uses: kdheepak/panvimdoc@v4.0.1
+        with:
+          vimdoc: telescope-orgmode
+          pandoc: DOCS.org
+          toc: true
+          treesitter: true
+          version: "NVIM v0.10.0"
+          description: "Fuzzy search, refile and link insertion for orgmode"
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: regenerate vimdoc from DOCS.org"
+          file_pattern: "doc/telescope-orgmode.txt"

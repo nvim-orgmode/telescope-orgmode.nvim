@@ -2,13 +2,15 @@
 
 [![tests](https://github.com/nvim-orgmode/telescope-orgmode.nvim/actions/workflows/tests.yml/badge.svg)](https://github.com/nvim-orgmode/telescope-orgmode.nvim/actions/workflows/tests.yml)
 
-Fuzzy search, refile, and link insertion for [orgmode](https://github.com/nvim-orgmode/orgmode) with [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) or [snacks.nvim](https://github.com/folke/snacks.nvim) picker.
+Fuzzy search, refile, and link insertion for [orgmode](https://github.com/nvim-orgmode/orgmode) with [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) or [snacks.nvim](https://github.com/folke/snacks.nvim).
+
+> Full reference: [`DOCS.org`](DOCS.org) (source) — or `:help telescope-orgmode` once installed.
 
 ## Features
 
 ### Search Headlines
 
-Jump to any heading in your `org_agenda_files`. You can filter by typing — the search matches against filename, tags, TODO state, and title.
+Jump to any heading in your `org_agenda_files`. Filter by typing — the search matches against filename, tags, TODO state, and title.
 
 https://github.com/user-attachments/assets/ea07829d-d80f-422d-b69b-2a42451dd5b8
 
@@ -18,23 +20,23 @@ Press `<C-Space>` to switch to file-level search. Files with a `#+TITLE:` show t
 
 ### Refile
 
-Move a headline under a different parent. Position your cursor on a headline, open the refile picker, and pick the destination.
+Move a headline under a different parent. Place the cursor on a headline, open the refile picker, pick the destination.
 
 https://github.com/user-attachments/assets/497f3767-b679-49c6-8ed6-9928c75016ac
 
 ### Tag Search
 
-Pick a tag, then browse the headlines that have it. `<C-t>` takes you back to the tag list.
+Pick a tag, then browse the headlines that carry it. `<C-t>` returns to the tag list.
 
 https://github.com/user-attachments/assets/289dd36a-e6b9-401a-b1cd-f5624405fc8d
 
 ### Insert Link
 
-Search for a headline or file and insert an org link at the cursor.
+Search a headline or file and insert an org link at the cursor.
 
 https://github.com/user-attachments/assets/938a13ee-4867-468a-b260-09406844994a
 
-## Installation
+## Quick start
 
 ### Snacks.picker
 
@@ -51,9 +53,9 @@ https://github.com/user-attachments/assets/938a13ee-4867-468a-b260-09406844994a
     tom.setup({ adapter = "snacks" })
 
     vim.keymap.set("n", "<leader>fh", tom.search_headings, { desc = "Org headlines" })
-    vim.keymap.set("n", "<leader>ft", tom.search_tags, { desc = "Org tags" })
-    vim.keymap.set("n", "<leader>r", tom.refile_heading, { desc = "Org refile" })
-    vim.keymap.set("n", "<leader>li", tom.insert_link, { desc = "Org insert link" })
+    vim.keymap.set("n", "<leader>ft", tom.search_tags,     { desc = "Org tags" })
+    vim.keymap.set("n", "<leader>r",  tom.refile_heading,  { desc = "Org refile" })
+    vim.keymap.set("n", "<leader>li", tom.insert_link,     { desc = "Org insert link" })
   end,
 }
 ```
@@ -73,134 +75,26 @@ https://github.com/user-attachments/assets/938a13ee-4867-468a-b260-09406844994a
 
     local ext = require("telescope").extensions.orgmode
     vim.keymap.set("n", "<leader>fh", ext.search_headings, { desc = "Org headlines" })
-    vim.keymap.set("n", "<leader>ft", ext.search_tags, { desc = "Org tags" })
-    vim.keymap.set("n", "<leader>r", ext.refile_heading, { desc = "Org refile" })
-    vim.keymap.set("n", "<leader>li", ext.insert_link, { desc = "Org insert link" })
+    vim.keymap.set("n", "<leader>ft", ext.search_tags,     { desc = "Org tags" })
+    vim.keymap.set("n", "<leader>r",  ext.refile_heading,  { desc = "Org refile" })
+    vim.keymap.set("n", "<leader>li", ext.insert_link,     { desc = "Org insert link" })
   end,
 }
 ```
 
-### Without plugin manager
+See [`DOCS.org`](DOCS.org) for `Without plugin manager` and other setups.
 
-```lua
--- Telescope
-require("telescope").load_extension("orgmode")
+## Documentation
 
--- Snacks
-require("telescope-orgmode").setup({ adapter = "snacks" })
-```
+The full reference manual lives in [`DOCS.org`](DOCS.org) and ships as a
+Vim help file. After install: `:help telescope-orgmode`.
 
-## Keybindings
-
-| Key | Action | Context |
-|-----|--------|---------|
-| `<C-Space>` | Toggle between headline and org file search | All pickers |
-| `<C-f>` | Toggle current file filter | Headlines |
-| `<C-t>` | Open tag picker / return to tag list | Headlines / Tags |
-| `<C-s>` | Toggle tag sort (frequency ↔ alphabetical) | Tags |
-| `<CR>` | Confirm selection | All |
-
-## Configuration
-
-Pass options to `setup()` (Snacks) or `telescope.setup({ extensions = { orgmode = { ... } } })` (Telescope). You can also pass them per call.
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `adapter` | string | `'telescope'` | `'telescope'` or `'snacks'` |
-| `max_depth` | number\|nil | nil | Max headline level (nil = all, 0 = files only) |
-| `show_location` | boolean | true | Show filename/category column |
-| `show_tags` | boolean | true | Show tags column |
-| `show_todo_state` | boolean | true | Show TODO state column |
-| `show_priority` | boolean | true | Show priority column |
-| `location_max_width` | number | 15 | Max width for location column |
-| `tags_max_width` | number | 15 | Max width for tags column |
-| `ordinal_fields` | string[]\|nil | nil | Search field order and selection (see [Search priority](#search-priority)) |
-
-### Per-call examples
-
-```lua
--- Org files only
-tom.search_headings({ mode = "orgfiles" })
-
--- Current file only
-tom.search_headings({ only_current_file = true })
-
--- Limit depth
-tom.refile_heading({ max_depth = 3 })
-
--- Sort tags alphabetically
-tom.search_tags({ initial_sort = "alphabetical" })
-```
-
-### Search priority
-
-Control which fields the fuzzy matcher searches and in what order. Fields listed first get a slight ranking boost.
-
-```lua
--- Default (all visible columns):
-ordinal_fields = { 'state', 'priority', 'headline', 'location', 'tags', 'properties' }
-
--- Only match against state and headline:
-ordinal_fields = { 'state', 'headline' }
-
--- Prioritize tags:
-ordinal_fields = { 'tags', 'state', 'headline' }
-```
-
-Omitted fields are still displayed but not searched.
-
-### Telescope Adapter Options
-
-The Telescope adapter passes `opts` straight to `pickers.new()`. Any Telescope option works at the top level; there is no sub-namespace and no whitelist.
-
-```lua
--- Vertical layout via standard Telescope keys
-require("telescope-orgmode").setup({
-  picker_defaults = {
-    search_headings = {
-      layout_strategy = "vertical",
-      layout_config = { width = 0.95 },
-    },
-  },
-})
-```
-
-See the [Telescope docs](https://github.com/nvim-telescope/telescope.nvim#themes) for the full option set.
-
-### Snacks Adapter Options
-
-The Snacks adapter accepts arbitrary picker options under a dedicated `snacks` sub-namespace, per picker type. Settings from `setup()` apply as defaults; per-call overrides deep-merge on top.
-
-Currently honored by `search_headings`, `refile_heading`, and `insert_link`. `search_tags` does not yet route through this pipeline. Values under `picker_defaults.search_tags.snacks` are ignored for now (follow-up).
-
-```lua
--- Vertical layout for the headlines picker
-require("telescope-orgmode").setup({
-  adapter = "snacks",
-  picker_defaults = {
-    search_headings = {
-      snacks = { layout = "vertical" },
-    },
-  },
-})
-```
-
-All other Snacks options (window size, previewers, matcher, sort, formatters, custom `win.input.keys`) follow the same pattern: nest them under `snacks`. User-provided `win.input.keys` merge additively with the adapter's; on conflict the adapter's binding wins, which keeps plugin shortcuts like `<C-Space>` functional. For the full option set and key/action shape, see the [Snacks picker docs](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md).
-
-**Adapter-owned fields** (silently ignored if set by the user): `title`, `items`, `pattern`, `preview`, `frecency`, `format`, `confirm`. The singular `preview` (default-previewer selector) is owned; the plural `previewers` (your custom previewer definitions) is user-configurable.
-
-The `snacks` key has no effect when the Telescope adapter is active.
-
-## Architecture
-
-```
-lua/telescope-orgmode/
-├── adapters/        # Telescope & Snacks implementations
-├── lib/             # Shared logic (actions, config, state, filters)
-├── entry_maker/     # Headline/file → picker entry conversion
-├── org.lua          # Orgmode API wrapper
-└── init.lua         # Public API, adapter routing
-```
+- [Pickers](DOCS.org) — `search_headings`, `search_tags`, `refile_heading`, `insert_link`
+- [Keybindings](DOCS.org) — `<C-Space>`, `<C-f>`, `<C-t>`, `<C-s>`
+- [Configuration](DOCS.org) — display options, custom property columns, search priority, picker defaults
+- [Adapter options](DOCS.org) — Telescope passthrough and Snacks `snacks` sub-namespace
+- [Profiles](DOCS.org) — custom data sources, factory resolvers, resolver interface
+- [Architecture](DOCS.org) — adapter / lib / entry_maker layering
 
 ## Contributing
 
@@ -208,6 +102,10 @@ lua/telescope-orgmode/
 make test       # Run tests
 make format     # Format with StyLua
 make lint       # Check formatting
+make docs       # Regenerate doc/telescope-orgmode.txt from DOCS.org
 make demo-env   # Interactive demo environment
-make demo       # Record demo videos (requires VHS)
 ```
+
+`doc/telescope-orgmode.txt` is generated from `DOCS.org` via
+[panvimdoc](https://github.com/kdheepak/panvimdoc) — do not edit it
+directly. CI rebuilds and commits it on push to `main`.

@@ -1,4 +1,4 @@
-.PHONY: help test test-plain test-file verify-keybindings verify-keybindings-telescope verify-keybindings-snacks demo demo-upload release format lint lint-sh clean
+.PHONY: help test test-plain test-file verify-keybindings verify-keybindings-telescope verify-keybindings-snacks demo demo-upload release format lint lint-sh docs clean
 
 help: ## Show available targets
 	@egrep '^(.+)\:\ .*##\ (.+)' $(MAKEFILE_LIST) | sed 's/:.*##/#/' | column -t -c 2 -s '#'
@@ -63,6 +63,9 @@ lint-sh: ## Check bash scripts with shellcheck (if available)
 	else \
 		echo "shellcheck not found, skipping..."; \
 	fi
+
+docs: ## Build doc/telescope-orgmode.txt from DOCS.org (local preview; CI is source of truth)
+	@./scripts/build-docs.sh
 
 clean: ## Remove vendor directory
 	@rm -rf vendor/

@@ -1,0 +1,303 @@
+* Introduction
+
+  =telescope-orgmode.nvim= is a Neovim plugin that integrates
+  [[https://github.com/nvim-orgmode/orgmode][nvim-orgmode]] with two picker
+  frameworks ([[https://github.com/nvim-telescope/telescope.nvim][telescope.nvim]]
+  and [[https://github.com/folke/snacks.nvim][snacks.nvim]]). It provides
+  fuzzy search for headlines, tags and org files, a refile picker, and
+  link insertion.
+
+  The plugin exposes four pickers:
+
+  - =search_headings()= — jump to any headline in =org_agenda_files=
+  - =search_tags()= — pick a tag, then browse its headlines
+  - =refile_heading()= — move the headline at the cursor under a new parent
+  - =insert_link()= — insert an org link at the cursor
+
+* Installation
+** Snacks.nvim
+
+   #+begin_src lua
+   {
+     "nvim-orgmode/telescope-orgmode.nvim",
+     event = "VeryLazy",
+     dependencies = {
+       "nvim-orgmode/orgmode",
+       "folke/snacks.nvim",
+     },
+     config = function()
+       local tom = require("telescope-orgmode")
+       tom.setup({ adapter = "snacks" })
+
+       vim.keymap.set("n", "<leader>fh", tom.search_headings, { desc = "Org headlines" })
+       vim.keymap.set("n", "<leader>ft", tom.search_tags,     { desc = "Org tags" })
+       vim.keymap.set("n", "<leader>r",  tom.refile_heading,  { desc = "Org refile" })
+       vim.keymap.set("n", "<leader>li", tom.insert_link,     { desc = "Org insert link" })
+     end,
+   }
+   #+end_src
+
+** Telescope
+
+   #+begin_src lua
+   {
+     "nvim-orgmode/telescope-orgmode.nvim",
+     event = "VeryLazy",
+     dependencies = {
+       "nvim-orgmode/orgmode",
+       "nvim-telescope/telescope.nvim",
+     },
+     config = function()
+       require("telescope").load_extension("orgmode")
+
+       local ext = require("telescope").extensions.orgmode
+       vim.keymap.set("n", "<leader>fh", ext.search_headings, { desc = "Org headlines" })
+       vim.keymap.set("n", "<leader>ft", ext.search_tags,     { desc = "Org tags" })
+       vim.keymap.set("n", "<leader>r",  ext.refile_heading,  { desc = "Org refile" })
+       vim.keymap.set("n", "<leader>li", ext.insert_link,     { desc = "Org insert link" })
+     end,
+   }
+   #+end_src
+
+** Without plugin manager
+
+   #+begin_src lua
+   -- Telescope: registers extension under telescope.extensions.orgmode
+   require("telescope").load_extension("orgmode")
+
+   -- Snacks: requires explicit setup
+   require("telescope-orgmode").setup({ adapter = "snacks" })
+   #+end_src
+
+* Pickers
+** search_headings
+
+   Fuzzy-search headlines across all =org_agenda_files=. Matches against
+   filename / category, tags, TODO state and headline title. =<C-Space>=
+   toggles between headline and file mode.
+
+   #+begin_src lua
+   local tom = require("telescope-orgmode")
+
+   tom.search_headings()                              -- all headlines
+   tom.search_headings({ only_current_file = true })  -- current buffer only
+   tom.search_headings({ mode = "orgfiles" })         -- start in file mode
+   tom.search_headings({ max_depth = 2 })             -- only level 1 + 2
+   #+end_src
+
+** search_tags
+
+   Pick a tag, then browse the headlines that carry it.
+
+   #+begin_src lua
+   tom.search_tags()
+   tom.search_tags({ initial_sort = "alphabetical" })  -- default: frequency
+   #+end_src
+
+   Inside the tag picker: =<C-s>= toggles sort, =<CR>= drills into the
+   tag's headlines. From the headline view, =<C-t>= returns to the tag
+   list.
+
+** refile_heading
+
+   Move the headline under the cursor to a new parent. Pass
+   =max_depth = 0= to refile to a file root.
+
+   #+begin_src lua
+   tom.refile_heading()
+   tom.refile_heading({ max_depth = 3 })
+   #+end_src
+
+** insert_link
+
+   Insert an org link at the cursor to a selected headline or file.
+
+   #+begin_src lua
+   tom.insert_link()
+   tom.insert_link({ mode = "orgfiles" })
+   #+end_src
+
+* Keybindings
+
+  | Key         | Action                                       | Context              |
+  |-------------+----------------------------------------------+----------------------|
+  | =<C-Space>= | Toggle between headline and org file search  | All pickers          |
+  | =<C-f>=     | Toggle current-file filter                   | Headlines            |
+  | =<C-t>=     | Open tag picker / return to tag list         | Headlines / Tags     |
+  | =<C-s>=     | Toggle tag sort (frequency ↔ alphabetical)   | Tags                 |
+  | =<CR>=      | Confirm selection                            | All                  |
+
+  Keybindings are wired by the adapter (Telescope or Snacks). Defaults
+  are defined in =lua/telescope-orgmode/lib/keybindings.lua=.
+
+* Configuration
+
+  Options can be passed three ways:
+
+  1. Globally via =setup({ ... })= (Snacks) or
+     =telescope.setup({ extensions = { orgmode = { ... } } })= (Telescope).
+  2. Per picker call: =tom.search_headings({ ... })=.
+  3. Per picker type via =picker_defaults= (see Picker defaults below).
+
+** Display options
+
+   | Option                | Type            | Default | Description                                          |
+   |-----------------------+-----------------+---------+------------------------------------------------------|
+   | =adapter=             | string          | telescope | =telescope= or =snacks=                            |
+   | =max_depth=           | number / nil    | nil     | Max headline level (nil = all, 0 = files only)       |
+   | =archived=            | boolean         | false   | Include =.org_archive= files and archived subtrees   |
+   | =only_current_file=   | boolean         | false   | Restrict to the current buffer                       |
+   | =show_location=       | boolean         | true    | Show filename / category column                      |
+   | =show_tags=           | boolean         | true    | Show tags column                                     |
+   | =show_todo_state=     | boolean         | true    | Show TODO state column                               |
+   | =show_priority=       | boolean         | true    | Show priority column                                 |
+   | =location_max_width=  | number          | 15      | Max width of location column                         |
+   | =tags_max_width=      | number          | 15      | Max width of tags column                             |
+   | =location_preference= | string[]        | { "category", "filename" } | Order: which value to display in location |
+   | =show_properties=     | table[]         | {}      | Custom property columns (see below)                  |
+   | =ordinal_fields=      | string[] / nil  | nil     | Fuzzy-match field order (see Search priority)        |
+
+** Custom property columns
+
+   Show org properties (from the =:PROPERTIES:= drawer) as extra columns:
+
+   #+begin_src lua
+   tom.setup({
+     show_properties = {
+       { name = "EFFORT",  max_width = 6,  highlight = "Number" },
+       { name = "OWNER",   max_width = 10, highlight = "String" },
+     },
+   })
+   #+end_src
+
+   Each entry: =name= (required, case-sensitive), =max_width= (default 15),
+   =highlight= (default =Comment=).
+
+** Search priority
+
+   Control which fields the fuzzy matcher searches and their ranking
+   order. Fields listed first get a slight ranking boost; omitted fields
+   are still displayed but not searched.
+
+   #+begin_src lua
+   -- Default: match against everything that's visible
+   ordinal_fields = { "state", "priority", "headline", "location", "tags", "properties" }
+
+   -- Match against state and headline only
+   ordinal_fields = { "state", "headline" }
+
+   -- Prefer tag matches
+   ordinal_fields = { "tags", "state", "headline" }
+   #+end_src
+
+   Valid field names: =headline=, =state=, =priority=, =location=,
+   =tags=, =properties=.
+
+** Picker defaults
+
+   Override per-picker options without touching the call site. Each key
+   under =picker_defaults= corresponds to a public function name.
+
+   #+begin_src lua
+   tom.setup({
+     picker_defaults = {
+       search_headings = { mode = "orgfiles" },
+       search_tags     = { initial_sort = "alphabetical" },
+       refile_heading  = { max_depth = 3 },
+     },
+   })
+   #+end_src
+
+   =picker_defaults= is deep-merged with built-in defaults; user values
+   win on conflicts.
+
+* Adapter options
+
+  Both adapters accept picker-framework options, but use different
+  shapes. Adapter options live alongside the framework-agnostic options
+  under =picker_defaults.<picker>= and are deep-merged with per-call
+  overrides on top.
+
+** Telescope
+
+   The Telescope adapter forwards =opts= straight to =pickers.new()=.
+   Any Telescope option works at the top level; there is no
+   sub-namespace and no whitelist.
+
+   #+begin_src lua
+   tom.setup({
+     picker_defaults = {
+       search_headings = {
+         layout_strategy = "vertical",
+         layout_config   = { width = 0.95 },
+       },
+     },
+   })
+   #+end_src
+
+   See [[https://github.com/nvim-telescope/telescope.nvim#themes][the Telescope docs]] for the full option set.
+
+** Snacks
+
+   The Snacks adapter accepts arbitrary picker options under a
+   dedicated =snacks= sub-namespace, per picker type. Honored by
+   =search_headings=, =refile_heading= and =insert_link=. =search_tags=
+   does not yet route through this pipeline — values under
+   =picker_defaults.search_tags.snacks= are ignored for now (follow-up).
+
+   #+begin_src lua
+   tom.setup({
+     adapter = "snacks",
+     picker_defaults = {
+       search_headings = {
+         snacks = { layout = "vertical" },
+       },
+     },
+   })
+   #+end_src
+
+   All other Snacks options (window size, previewers, matcher, sort,
+   formatters, custom =win.input.keys=) follow the same pattern: nest
+   them under =snacks=. User-provided =win.input.keys= merge additively
+   with the adapter's; on conflict the adapter's binding wins, which
+   keeps plugin shortcuts like =<C-Space>= functional. See the
+   [[https://github.com/folke/snacks.nvim/blob/main/docs/picker.md][Snacks picker docs]] for the full option set and the key/action shape.
+
+   *Adapter-owned fields* (silently ignored when set by the user):
+   =title=, =items=, =pattern=, =preview=, =frecency=, =format=,
+   =confirm=. Note the singular =preview= (default-previewer selector)
+   is owned, while the plural =previewers= (your custom previewer
+   definitions) is user-configurable.
+
+   The =snacks= key has no effect when the Telescope adapter is active.
+
+* Architecture
+
+  #+begin_src text
+  lua/telescope-orgmode/
+  ├── adapters/        # Telescope & Snacks-specific UI
+  ├── lib/             # Framework-agnostic: actions, config, state, …
+  ├── entry_maker/     # Headline / file → picker entry projection
+  ├── org.lua          # Orgmode API wrapper (single source of orgmode deps)
+  └── init.lua         # Public API, adapter routing
+  #+end_src
+
+  Business logic lives in =lib/= and never imports a picker framework.
+  Adapters under =adapters/= are thin shims that translate the
+  framework-agnostic =OrgmodePickerConfig= and entry stream into the
+  picker's expected shape.
+
+* Contributing
+
+  #+begin_src bash
+  make test       # Run all tests
+  make format     # Format with StyLua
+  make lint       # Check formatting
+  make docs       # Regenerate doc/telescope-orgmode.txt from DOCS.org
+  make demo-env   # Interactive demo environment
+  make demo       # Record demo videos (requires VHS)
+  #+end_src
+
+  =doc/telescope-orgmode.txt= is generated from =DOCS.org= via panvimdoc.
+  Do not edit it directly — edit =DOCS.org= and run =make docs=. CI
+  regenerates and commits the vimdoc automatically on push to =main=.
