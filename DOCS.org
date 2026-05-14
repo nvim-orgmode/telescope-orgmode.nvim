@@ -204,12 +204,14 @@
        search_headings = { mode = "orgfiles" },
        search_tags     = { initial_sort = "alphabetical" },
        refile_heading  = { max_depth = 3 },
+       insert_link     = { source = "roam" },
      },
    })
    #+end_src
 
    =picker_defaults= is deep-merged with built-in defaults; user values
-   win on conflicts.
+   win on conflicts. =source= keys are validated against the source
+   registry at setup time.
 
 * Adapter options
 
@@ -271,12 +273,104 @@
 
    The =snacks= key has no effect when the Telescope adapter is active.
 
+* Sources
+
+  A *source* is a named data provider for the pickers. The built-in
+  =default= source reads headlines, tags and files from
+  =org_agenda_files= via the orgmode API. Custom sources let users (or
+  companion plugins) swap that data path — e.g. an org-roam database,
+  an MCP-backed cache, or a filtered subset.
+
+** Selecting a source
+
+   #+begin_src lua
+   -- Per call
+   tom.search_headings({ source = "roam" })
+
+   -- Per picker type (see Picker defaults)
+   tom.setup({
+     picker_defaults = {
+       insert_link = { source = "roam" },
+     },
+   })
+
+   -- Globally
+   tom.setup({ default_source = "roam" })
+   #+end_src
+
+** Registering a source
+
+   A source is registered under =sources=. The value is either a
+   source table or a *factory* function that receives the matching
+   =source_setup= entry and returns a source.
+
+   #+begin_src lua
+   -- Static source
+   tom.setup({
+     sources = {
+       my_static = require("my-plugin.source"),
+     },
+   })
+
+   -- Factory source (lazily instantiated, setup args injected)
+   tom.setup({
+     sources = {
+       roam = require("org-roam-source").build,
+     },
+     source_setup = {
+       roam = { db_path = "~/org/roam.db", limit = 500 },
+     },
+     default_source = "roam",
+   })
+   #+end_src
+
+   Factory sources are cached after first resolution; =setup()= clears
+   the cache, so re-invocation re-instantiates with fresh args.
+
+** Source interface
+
+   A source is a table with these fields:
+
+   #+begin_src lua
+   ---@class OrgmodeSource
+   ---@field name string
+   ---@field enumerate_files            fun(opts: table): table[]
+   ---@field enumerate_headlines        fun(opts: table): table[]
+   ---@field enumerate_tags             fun(opts: table): table[]
+   ---@field enumerate_headlines_by_query? fun(query: string, opts: table): table[]
+   #+end_src
+
+   - =enumerate_files= must return entries shaped like
+     ={ filename, title? }=. =title= is auto-derived from the filename
+     stem if omitted.
+   - =enumerate_headlines= must return entries shaped like
+     ={ filename, title, level, line_number, all_tags?, is_archived?, todo_value?, todo_type?, priority?, properties? }=.
+     Optional fields get sane defaults via =sources.normalize_headline=.
+   - =enumerate_tags= must return entries shaped like
+     ={ tag, count?, files? }=.
+   - =enumerate_headlines_by_query= is optional. If absent, callers fall
+     back to =enumerate_headlines= and the source gets a one-shot
+     =vim.notify= WARN (one per source per session).
+
+   All source functions receive the merged picker =opts= (depth,
+   archived, current-file filter, show_properties, etc.). Filtering and
+   pagination are the source's responsibility — the plugin's display
+   layer trusts what it gets.
+
+** Validation
+
+   =setup()= validates that every source name referenced by
+   =default_source= or =picker_defaults.*.source= exists in
+   =sources=. Unknown names raise an =error()= at setup time, not at
+   picker open.
+
 * Architecture
 
   #+begin_src text
   lua/telescope-orgmode/
   ├── adapters/        # Telescope & Snacks-specific UI
-  ├── lib/             # Framework-agnostic: actions, config, state, …
+  ├── lib/             # Framework-agnostic: actions, config, state, sources, …
+  │   └── sources/     # Built-in default source + registry
   ├── entry_maker/     # Headline / file → picker entry projection
   ├── org.lua          # Orgmode API wrapper (single source of orgmode deps)
   └── init.lua         # Public API, adapter routing
