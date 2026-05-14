@@ -76,7 +76,14 @@ end
 ---Setup global defaults
 ---@param ext_opts table
 function M.setup(ext_opts)
-  M.defaults = vim.tbl_extend('force', M.defaults, ext_opts or {})
+  ext_opts = ext_opts or {}
+  local picker_defaults = ext_opts.picker_defaults
+  if picker_defaults then
+    M.picker_defaults = vim.tbl_deep_extend('force', M.picker_defaults, picker_defaults)
+    ext_opts = vim.tbl_extend('force', {}, ext_opts)
+    ext_opts.picker_defaults = nil
+  end
+  M.defaults = vim.tbl_extend('force', M.defaults, ext_opts)
 end
 
 ---Merge user options with defaults
