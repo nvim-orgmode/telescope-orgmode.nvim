@@ -2,6 +2,7 @@ local OrgFile = require('orgmode.files.file')
 local org = require('telescope-orgmode.org')
 local highlights = require('telescope-orgmode.lib.highlights')
 local headlines_entry_maker = require('telescope-orgmode.entry_maker.headlines')
+local telescope_entry = require('telescope-orgmode.adapters.telescope_entry')
 
 -- Use [Section Name] format in describe() for grouped test output
 -- See scripts/test-formatter.sh for formatting behavior
@@ -106,7 +107,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = true,
         show_priority = true,
         widths = widths,
@@ -138,7 +139,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = false,
         show_priority = true,
         widths = widths,
@@ -164,7 +165,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = true,
         show_priority = false,
         widths = widths,
@@ -226,7 +227,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_location = false,
         show_tags = true,
         show_todo_state = true,
@@ -254,7 +255,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_location = true,
         show_tags = false,
         show_todo_state = true,
@@ -391,7 +392,7 @@ describe('[Entry Maker: Headlines]', function()
 
       local show_properties = { { name = 'ID' } }
       local results, widths = headlines_entry_maker.get_entries({ show_properties = show_properties })
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_properties = show_properties,
         widths = widths,
       })
@@ -418,7 +419,7 @@ describe('[Entry Maker: Headlines]', function()
 
       local show_properties = { { name = 'EFFORT' } }
       local results, widths = headlines_entry_maker.get_entries({ show_properties = show_properties })
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_properties = show_properties,
         widths = widths,
       })
@@ -444,7 +445,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({ widths = widths })
+      local make_entry = telescope_entry.make_headline_entry({ widths = widths })
 
       local entry = make_entry(results[1])
       assert.is_falsy(string.find(entry.ordinal, 'secret%-id'))
@@ -530,7 +531,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = true,
         show_priority = true,
         show_tags = true,
@@ -563,7 +564,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = true,
         show_priority = true,
         show_tags = true,
@@ -594,7 +595,7 @@ describe('[Entry Maker: Headlines]', function()
       }
 
       local results, widths = headlines_entry_maker.get_entries({})
-      local make_entry = headlines_entry_maker.make_entry({
+      local make_entry = telescope_entry.make_headline_entry({
         show_todo_state = true,
         show_priority = true,
         show_tags = true,

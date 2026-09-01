@@ -11,6 +11,7 @@ local config = require('telescope-orgmode.lib.config')
 local org = require('telescope-orgmode.org')
 local headlines_entry = require('telescope-orgmode.entry_maker.headlines')
 local orgfiles_entry = require('telescope-orgmode.entry_maker.orgfiles')
+local telescope_entry = require('telescope-orgmode.adapters.telescope_entry')
 local lib_actions = require('telescope-orgmode.lib.actions')
 local keybindings = require('telescope-orgmode.lib.keybindings')
 
@@ -53,12 +54,12 @@ local function create_finder(state, opts)
 
     return finders.new_table({
       results = results,
-      entry_maker = opts.entry_maker or headlines_entry.make_entry(headline_opts),
+      entry_maker = opts.entry_maker or telescope_entry.make_headline_entry(headline_opts),
     })
   else -- orgfiles
     return finders.new_table({
       results = orgfiles_entry.get_entries(opts),
-      entry_maker = opts.entry_maker or orgfiles_entry.make_entry(),
+      entry_maker = opts.entry_maker or telescope_entry.make_orgfile_entry(),
     })
   end
 end
