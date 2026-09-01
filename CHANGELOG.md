@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.6.2
+
+**Fixes**
+
+- `picker_defaults` passed to `setup()` now reaches the pickers. It was merged into the wrong config table, so the `snacks` sub-namespace added in 1.6.1 never took effect.
+
+**Full Changelog**: https://github.com/nvim-orgmode/telescope-orgmode.nvim/compare/1.6.1...1.6.2
+
+## 1.6.1
+
+**New features**
+
+- Snacks picker options are configurable per picker type through a `snacks` sub-namespace in `picker_defaults`: layout, window, previewers, matcher, sort and additional input keys. Per-call overrides deep-merge over the setup defaults.
+
+**Notes**
+
+- The reference manual now ships as a Vim help file — read it offline with `:help telescope-orgmode`.
+- Adapter-owned snacks fields (`title`, `items`, `pattern`, `preview`, `frecency`, `format`, `confirm`) stay protected: user values for those are ignored to keep the adapter contract intact. User input keys merge additively, and adapter keys win on conflict.
+- The `snacks` sub-namespace applies to the Snacks adapter only. The Telescope adapter keeps its existing pass-through opts, and `search_tags` is not routed through this pipeline yet.
+
+**Full Changelog**: https://github.com/nvim-orgmode/telescope-orgmode.nvim/compare/1.6.0...1.6.1
+
 ## 1.6.0
 
 **New features**
