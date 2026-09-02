@@ -68,6 +68,30 @@ describe('[Unit: lib/sources]', function()
       assert.equals('custom', source.name)
     end)
 
+    it('keeps same-named sources in separate registries apart', function()
+      local first = { sources = { shared = fake_source('first') }, default_source = 'shared' }
+      local second = { sources = { shared = fake_source('second') }, default_source = 'shared' }
+
+      assert.equals('first', sources.resolve_source({}, first).name)
+      assert.equals('second', sources.resolve_source({}, second).name)
+    end)
+
+    it('instantiates a factory once per registry', function()
+      local call_count = 0
+      local function factory()
+        call_count = call_count + 1
+        return fake_source('counted')
+      end
+      local first = { sources = { counted = factory }, default_source = 'counted' }
+      local second = { sources = { counted = factory }, default_source = 'counted' }
+
+      sources.resolve_source({}, first)
+      sources.resolve_source({}, first)
+      sources.resolve_source({}, second)
+
+      assert.equals(2, call_count)
+    end)
+
     it('throws a clear error when opts.source is unknown', function()
       local config = {
         sources = { default = fake_source('default') },

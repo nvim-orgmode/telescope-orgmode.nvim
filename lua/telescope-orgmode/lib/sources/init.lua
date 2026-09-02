@@ -3,8 +3,11 @@
 
 local M = {}
 
--- Modul-internes Setup-Time-Cache für Factory-Sources.
-local _resolved_cache = {}
+-- Factory sources are instantiated once per registry. The cache is keyed
+-- on the registry table, not on the source name: two configs registering
+-- the same name get their own instance, and a registry that goes out of
+-- scope takes its instances with it.
+local _resolved_cache = setmetatable({}, { __mode = 'k' })
 
 -- Tracks per-source fallback warnings (one notify per source name) for
 -- sources that don't implement `enumerate_headlines_by_query`.
@@ -23,11 +26,13 @@ local _notified_fallbacks = {}
 ---@param config table { sources = {...} }
 ---@return OrgmodeSource
 local function resolve_registry_entry(name, config)
-  if _resolved_cache[name] then
-    return _resolved_cache[name]
+  local registry = config.sources or {}
+  local cached = _resolved_cache[registry]
+  if cached and cached[name] then
+    return cached[name]
   end
 
-  local entry = config.sources and config.sources[name]
+  local entry = registry[name]
   if entry == nil then
     error('Unknown source: ' .. tostring(name))
   end
@@ -39,7 +44,11 @@ local function resolve_registry_entry(name, config)
     source = entry
   end
 
-  _resolved_cache[name] = source
+  if not cached then
+    cached = {}
+    _resolved_cache[registry] = cached
+  end
+  cached[name] = source
   return source
 end
 
@@ -150,7 +159,7 @@ end
 ---Clears the source and fallback-notify caches. Required to make factory
 ---sources re-instantiate after a setup re-run (e.g. Lazy.nvim reload).
 function M.invalidate_cache()
-  _resolved_cache = {}
+  _resolved_cache = setmetatable({}, { __mode = 'k' })
   _notified_fallbacks = {}
 end
 
