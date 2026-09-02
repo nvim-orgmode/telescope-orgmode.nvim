@@ -16,6 +16,19 @@ describe('[Unit: lib/tags get_tag_preview_lines]', function()
     org.get_headlines_for_tag = original_get_headlines_for_tag
   end)
 
+  it('forwards caller opts, source included, to the loader', function()
+    local seen
+    org.get_headlines_for_tag = function(_, opts)
+      seen = opts
+      return {}
+    end
+
+    tags_lib.get_tag_preview_lines('work', { source = 'roam_db', max_count = 10 })
+
+    assert.equals('roam_db', seen.source)
+    assert.equals(10, seen.max_count)
+  end)
+
   it('renders new Headline-Schema entries (todo_value + priority)', function()
     org.get_headlines_for_tag = function()
       return {

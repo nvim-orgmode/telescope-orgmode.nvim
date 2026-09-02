@@ -399,13 +399,17 @@ function M.search_tags(user_opts)
     return
   end
 
+  -- Carries the picker's resolved opts (source included) into the
+  -- preview, which would otherwise fall back to the default source.
+  local preview_opts = vim.tbl_extend('force', opts, { max_count = 50 })
+
   -- Create tag previewer
   local function create_tag_previewer()
     return require('telescope.previewers').new_buffer_previewer({
       title = 'Headlines with Tag',
       define_preview = function(self, entry)
         local tag = entry.value.tag
-        local lines = tags_lib.get_tag_preview_lines(tag, { max_count = 50 })
+        local lines = tags_lib.get_tag_preview_lines(tag, preview_opts)
         vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
       end,
     })

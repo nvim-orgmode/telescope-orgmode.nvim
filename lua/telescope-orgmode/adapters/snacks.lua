@@ -570,6 +570,10 @@ function M.search_tags(user_opts)
     return nil
   end
 
+  -- Carries the picker's resolved opts (source included) into the
+  -- preview, which would otherwise fall back to the default source.
+  local preview_opts = vim.tbl_extend('force', opts, { max_count = 50 })
+
   -- Create items (preview computed lazily)
   local items = create_tag_items(tags)
 
@@ -604,7 +608,7 @@ function M.search_tags(user_opts)
         return
       end
       local tag = ctx.item.tag_info.tag
-      local preview_lines = tags_lib.get_tag_preview_lines(tag, { max_count = 50 })
+      local preview_lines = tags_lib.get_tag_preview_lines(tag, preview_opts)
       ctx.preview:set_lines(preview_lines)
       ctx.preview:highlight({ ft = 'org' })
     end,
