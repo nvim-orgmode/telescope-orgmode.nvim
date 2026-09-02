@@ -43,8 +43,9 @@ end
 function M.load_files(opts)
   opts = opts or {}
   local source = resolve(opts)
-  local results = filters.only_current_file(source.enumerate_files(opts), opts)
-  results = filters.exclude_archive_files(results, opts)
+  -- No only_current_file: the files picker has never scoped to the
+  -- current file, and the orgfiles path forwards raw user opts.
+  local results = filters.exclude_archive_files(source.enumerate_files(opts), opts)
   results = filters.sort_by_file_mtime(results)
   for _, entry in ipairs(results) do
     sources.normalize_file(entry)
@@ -206,8 +207,11 @@ function M.get_link_destination(entry, opts)
   return M.get_inter_file_link(entry)
 end
 
----Load tags with occurrence counts, respecting opts.source and
----opts.archived.
+---Load tags with occurrence counts, respecting opts.source.
+---
+---`.org_archive` files are always excluded; opts.archived has no effect
+---here, because a tag spans files and cannot be filtered out of a
+---finished tag entry.
 ---@param opts? table
 ---@return { tag: string, count: number, files: string[] }[]
 function M.load_tags(opts)
@@ -220,13 +224,32 @@ function M.load_tags(opts)
 end
 
 ---Returns headlines tagged with `tag` in the full headline schema
----(todo_value, priority, ...). Backed by load_headlines_by_search('+'..tag).
+---(todo_value, priority, ...).
+---
+---Deliberately policy-free: the tag preview has always shown raw file
+---order and included archived subtrees. It caps the result itself
+---instead, so truncation does not depend on an ordering step.
 ---@param tag string Tag to search for
----@param opts? { max_count?: number, archived?: boolean, source?: string }
+---@param opts? { max_count?: number, source?: string }
 ---@return table[] headline entries
 function M.get_headlines_for_tag(tag, opts)
-  opts = opts or {}
-  return M.load_headlines_by_search('+' .. tag, vim.tbl_extend('keep', { max_count = 50 }, opts))
+  opts = vim.tbl_extend('keep', opts or {}, { max_count = 50 })
+  local source = resolve(opts)
+
+  local results = {}
+  for _, headline in ipairs(source.enumerate_headlines(opts)) do
+    if vim.tbl_contains(headline.all_tags or {}, tag) then
+      table.insert(results, headline)
+      if #results >= opts.max_count then
+        break
+      end
+    end
+  end
+
+  for _, entry in ipairs(results) do
+    sources.normalize_headline(entry)
+  end
+  return results
 end
 
 return M
