@@ -3,11 +3,16 @@ local OrgAgendaApi = require('orgmode.api.agenda')
 
 local M = {}
 
--- Source-Bridge: alle Pipeline-Loader delegieren an einen Source
--- (Default: telescope-orgmode.lib.sources.default). Auflösung erfolgt über
--- sources.resolve_source mit der globalen Config — so wirkt sowohl
--- opts.source als auch picker_defaults[*].source.
+-- Source bridge: every pipeline loader delegates to a source (default:
+-- telescope-orgmode.lib.sources.default), resolved through
+-- sources.resolve_source against the global config, so both opts.source
+-- and picker_defaults[*].source take effect.
+--
+-- Sources enumerate what exists; the policy chains below decide what the
+-- user sees. They are deliberately not uniform: load_files ignores
+-- only_current_file, and get_headlines_for_tag applies no policy at all.
 local sources = require('telescope-orgmode.lib.sources')
+local filters = require('telescope-orgmode.lib.entry_filters')
 
 local function get_config()
   local cfg = require('telescope-orgmode.lib.config')
@@ -23,10 +28,24 @@ local function resolve(opts)
   return sources.resolve_source(opts, get_config())
 end
 
+---Policy chain shared by the two headline loaders.
+---@param results table[]
+---@param opts table
+---@return table[]
+local function apply_headline_policy(results, opts)
+  results = filters.only_current_file(results, opts)
+  results = filters.exclude_archive_files(results, opts)
+  results = filters.exclude_archived_subtrees(results, opts)
+  results = filters.max_depth(results, opts)
+  return filters.sort_by_file_mtime(results)
+end
+
 function M.load_files(opts)
   opts = opts or {}
   local source = resolve(opts)
-  local results = source.enumerate_files(opts)
+  local results = filters.only_current_file(source.enumerate_files(opts), opts)
+  results = filters.exclude_archive_files(results, opts)
+  results = filters.sort_by_file_mtime(results)
   for _, entry in ipairs(results) do
     sources.normalize_file(entry)
   end
@@ -36,50 +55,53 @@ end
 function M.load_headlines(opts)
   opts = opts or {}
   local source = resolve(opts)
-  local results = source.enumerate_headlines(opts)
+  local results = apply_headline_policy(source.enumerate_headlines(opts), opts)
   for _, entry in ipairs(results) do
     sources.normalize_headline(entry)
   end
   return results
 end
 
+---Runs `query` against the source: uses the source's own query support
+---when it has any, otherwise falls back to enumerate_headlines plus a
+---Search post-filter.
+---@param source OrgmodeSource
+---@param query string
+---@param opts table
+---@return table[]
+local function enumerate_by_query(source, query, opts)
+  if source.enumerate_headlines_by_query then
+    return source.enumerate_headlines_by_query(query, opts)
+  end
+
+  sources.notify_fallback(source)
+  local Search = require('orgmode.files.elements.search')
+  local search = Search:new(query)
+
+  local results = {}
+  for _, headline in ipairs(source.enumerate_headlines(opts)) do
+    -- Search:check expects a table with tags / props / todo. The
+    -- fallback path only has the normalized schema to work with.
+    local matches = search:check({
+      tags = headline.all_tags or {},
+      props = headline.properties or {},
+      todo = headline.todo_value,
+    })
+    if matches then
+      table.insert(results, headline)
+    end
+  end
+  return results
+end
+
 --- Load headlines using orgmode Search API with tag-based filtering.
---- Bevorzugt source.enumerate_headlines_by_query; bei nil wird auf
---- enumerate_headlines + Search:new()-Post-Filter zurückgefallen.
 ---@param query string Orgmode search query (e.g., "+work", "tag1|tag2")
 ---@param opts table
 ---@return table[] headline entries
 function M.load_headlines_by_search(query, opts)
   opts = opts or {}
   local source = resolve(opts)
-
-  local results
-  if source.enumerate_headlines_by_query then
-    results = source.enumerate_headlines_by_query(query, opts)
-  else
-    sources.notify_fallback(source)
-    local Search = require('orgmode.files.elements.search')
-    local search = Search:new(query)
-    local headlines = source.enumerate_headlines(opts)
-    results = {}
-    local max_count = opts.max_count
-    for _, headline in ipairs(headlines) do
-      if max_count and #results >= max_count then
-        break
-      end
-      -- Search:check erwartet eine Tabelle mit tags / props / todo. Im
-      -- Fallback-Pfad steht uns nur das normalisierte Schema zur Verfügung.
-      local matches = search:check({
-        tags = headline.all_tags or {},
-        props = headline.properties or {},
-        todo = headline.todo_value,
-      })
-      if matches then
-        table.insert(results, headline)
-      end
-    end
-  end
-
+  local results = apply_headline_policy(enumerate_by_query(source, query, opts), opts)
   for _, entry in ipairs(results) do
     sources.normalize_headline(entry)
   end

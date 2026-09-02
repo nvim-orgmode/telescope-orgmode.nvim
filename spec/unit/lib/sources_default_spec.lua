@@ -47,28 +47,19 @@ describe('[Unit: lib/sources/default]', function()
       assert.same({ 'First', 'Second' }, titles)
     end)
 
-    it('excludes .org_archive files by default', function()
+    -- Provider contract: archive exclusion and only_current_file are
+    -- policy, applied in org.lua via lib/entry_filters.lua.
+    it('includes .org_archive files', function()
       local regular = load_file_sync({ '* Regular' })
       local archive = load_archive_sync({ '* Archived' })
       mock_orgmode({ regular, archive })
 
       local result = default.enumerate_files({})
 
-      assert.equals(1, #result)
-      assert.equals(regular.filename, result[1].filename)
-    end)
-
-    it('includes .org_archive files when archived=true', function()
-      local regular = load_file_sync({ '* Regular' })
-      local archive = load_archive_sync({ '* Archived' })
-      mock_orgmode({ regular, archive })
-
-      local result = default.enumerate_files({ archived = true })
-
       assert.equals(2, #result)
     end)
 
-    it('respects only_current_file', function()
+    it('ignores only_current_file', function()
       local f1 = load_file_sync({ '* A' })
       local f2 = load_file_sync({ '* B' })
       mock_orgmode({ f1, f2 })
@@ -78,8 +69,7 @@ describe('[Unit: lib/sources/default]', function()
         original_file = f1.filename,
       })
 
-      assert.equals(1, #result)
-      assert.equals(f1.filename, result[1].filename)
+      assert.equals(2, #result)
     end)
   end)
 
@@ -108,7 +98,7 @@ describe('[Unit: lib/sources/default]', function()
       assert.equals('DONE', result[2].todo_type)
     end)
 
-    it('respects max_depth', function()
+    it('ignores max_depth', function()
       local file = load_file_sync({
         '* L1',
         '** L2',
@@ -118,10 +108,10 @@ describe('[Unit: lib/sources/default]', function()
 
       local result = default.enumerate_headlines({ max_depth = 2 })
 
-      assert.equals(2, #result)
+      assert.equals(3, #result)
     end)
 
-    it('excludes archived subtrees by default', function()
+    it('includes archived subtrees, flagged via is_archived', function()
       -- Headline-level :ARCHIVE: tag triggers is_archived().
       local file = load_file_sync({
         '* Active',
@@ -131,8 +121,9 @@ describe('[Unit: lib/sources/default]', function()
 
       local result = default.enumerate_headlines({})
 
-      assert.equals(1, #result)
-      assert.equals('Active', result[1].title)
+      assert.equals(2, #result)
+      assert.is_false(result[1].is_archived)
+      assert.is_true(result[2].is_archived)
     end)
 
     it('loads properties when show_properties is set', function()
@@ -169,7 +160,9 @@ describe('[Unit: lib/sources/default]', function()
       assert.equals('Task C', result[2].title)
     end)
 
-    it('respects max_count', function()
+    -- max_count is not a source concern: it existed only on the tag
+    -- preview path, which caps the result itself.
+    it('ignores max_count', function()
       local file = load_file_sync({
         '* H1 :work:',
         '* H2 :work:',
@@ -179,9 +172,11 @@ describe('[Unit: lib/sources/default]', function()
 
       local result = default.enumerate_headlines_by_query('+work', { max_count = 2 })
 
-      assert.equals(2, #result)
+      assert.equals(3, #result)
     end)
 
+    -- The two exclusions below come from orgmode's own `apply_search`,
+    -- not from this source. Main relied on the same behaviour.
     it('excludes archived subtrees by default', function()
       local file = load_file_sync({
         '* Active :work:',

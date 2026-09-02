@@ -67,23 +67,27 @@ local function sort_tags(entries)
 end
 
 describe('[Unit: lib/sources/default golden-snapshot via fixtures]', function()
-  local default
+  local default, org
   local notes, project_a, archive
 
   before_each(function()
     package.loaded['telescope-orgmode.lib.sources.default'] = nil
     package.loaded['telescope-orgmode.org'] = nil
     default = require('telescope-orgmode.lib.sources.default')
+    org = require('telescope-orgmode.org')
+    require('telescope-orgmode.lib.sources').invalidate_cache()
     notes = load_fixture('notes.org')
     project_a = load_fixture('project_a.org')
     archive = load_fixture('legacy.org_archive')
     mock_orgmode({ notes, project_a, archive })
   end)
 
-  describe('enumerate_files', function()
+  -- Archive exclusion and depth capping are policy, so they are asserted
+  -- against the loaders in org.lua. The source-level snapshots below
+  -- cover the projection only.
+  describe('load_files', function()
     it('returns non-archive files only by default', function()
-      local out =
-        sort_files_by_name(strip_filenames(snapshot.project_list(default.enumerate_files({}), snapshot.project_file)))
+      local out = sort_files_by_name(strip_filenames(snapshot.project_list(org.load_files({}), snapshot.project_file)))
       assert.same({
         { filename = 'notes.org', title = 'Notes' },
         { filename = 'project_a.org', title = 'Project A' },
@@ -92,7 +96,7 @@ describe('[Unit: lib/sources/default golden-snapshot via fixtures]', function()
 
     it('includes archive files when opts.archived', function()
       local out = sort_files_by_name(
-        strip_filenames(snapshot.project_list(default.enumerate_files({ archived = true }), snapshot.project_file))
+        strip_filenames(snapshot.project_list(org.load_files({ archived = true }), snapshot.project_file))
       )
       assert.same({
         { filename = 'legacy.org_archive', title = 'Legacy Archive' },
@@ -102,11 +106,10 @@ describe('[Unit: lib/sources/default golden-snapshot via fixtures]', function()
     end)
   end)
 
-  describe('enumerate_headlines', function()
+  describe('load_headlines', function()
     it('projects full schema, excludes archived headlines and archive files', function()
-      local out = sort_headlines(
-        strip_filenames(snapshot.project_list(default.enumerate_headlines({}), snapshot.project_headline))
-      )
+      local out =
+        sort_headlines(strip_filenames(snapshot.project_list(org.load_headlines({}), snapshot.project_headline)))
       assert.same({
         {
           filename = 'notes.org',
@@ -197,9 +200,7 @@ describe('[Unit: lib/sources/default golden-snapshot via fixtures]', function()
 
     it('respects max_depth = 1 (drops level-2 sub-headline)', function()
       local out = sort_headlines(
-        strip_filenames(
-          snapshot.project_list(default.enumerate_headlines({ max_depth = 1 }), snapshot.project_headline)
-        )
+        strip_filenames(snapshot.project_list(org.load_headlines({ max_depth = 1 }), snapshot.project_headline))
       )
       local titles = {}
       for _, e in ipairs(out) do
